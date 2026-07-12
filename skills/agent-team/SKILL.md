@@ -17,6 +17,16 @@ Which agent plays which role is per-user configuration, not hardcoded.
 **Core principle:** delegate execution, never judgment. The spec and the final
 quality gate always stay with you.
 
+**Models your own harness runs natively don't go through this plugin.**
+agent-send exists to reach OTHER agents' CLIs. If the model a role would use
+is one the orchestrating harness already speaks — Claude Code with
+sonnet/haiku/opus (its Agent tool, `model` option), Codex with GPT models,
+opencode with its configured models — spawn the harness's own subagent
+instead. Native subagents skip the extra CLI spawn, share the harness (hooks,
+permissions, session resume), and cost nothing extra to wire. The same-vendor
+backend exists only as an escape hatch for the rare case that genuinely needs
+a detached external CLI session.
+
 ## Setup (first use or reconfiguration)
 
 If `~/.config/agent-team/config.json` is missing, or the user asks to
@@ -29,7 +39,9 @@ set up / change their agent team:
 3. Interview the user with AskUserQuestion: which roles they want (names are
    free-form, e.g. `spec-review`, `impl`, `docs`), which backend serves each
    role, model per role picked from the step-2 list (omit to use the CLI's
-   own default), and whether the role may write files.
+   own default), and whether the role may write files. If a proposed role
+   targets a model the current harness runs natively, steer it to the
+   harness's own subagent mechanism instead of configuring it here.
 4. Write the config and confirm with `agent-send --roles`:
 
 ```json
@@ -53,7 +65,9 @@ set up / change their agent team:
 - The user asks to set up or reconfigure their agent team
 
 **When NOT to use:** edits you can finish faster yourself; work needing this
-conversation's context (external agents only see what you put in the prompt).
+conversation's context (external agents only see what you put in the prompt);
+work for a model your harness runs natively — use its built-in subagent
+mechanism instead (e.g. Claude Code's Agent tool with `model`).
 
 ## Quick Reference
 
@@ -95,3 +109,4 @@ constraints. External agents see none of your conversation.
 | Auto-recreating an expired session | agent-send exits non-zero instead — context loss must be visible, not silent |
 | Merging delegated work unverified | You are the quality gate: run the tests, read the diff |
 | Offering model names from memory | Catalogs move fast (new releases monthly); list live ones with `agent-send --models`, then smoke-test |
+| Routing your harness's native models through agent-send (e.g. sonnet via `agent-send claude` from Claude Code) | The harness runs them natively — spawn its built-in subagent; agent-send is for reaching other agents' CLIs |
