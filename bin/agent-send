@@ -111,7 +111,7 @@ codex)
     rc=$?
     printf '%s\n' "$out"
     [[ $rc -eq 0 ]] || exit "$rc"
-    id=$(grep -oP '^session id: \K\S+' <<<"$out" | head -1)
+    id=$(sed -n 's/^session id: \([^ ]*\).*/\1/p' <<<"$out" | head -1)
     [[ -n $id ]] || {
       echo "agent-send: could not extract codex session id" >&2
       exit 1
@@ -135,7 +135,7 @@ opencode)
       printf '%s\n' "$out"
       exit "$rc"
     }
-    id=$(grep -oP '"sessionID":"\K[^"]+' <<<"$out" | head -1)
+    id=$(sed -n 's/.*"sessionID":"\([^"]*\)".*/\1/p' <<<"$out" | head -1)
     [[ -n $id ]] || {
       printf '%s\n' "$out"
       echo "agent-send: could not extract opencode session id" >&2
