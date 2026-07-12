@@ -13,11 +13,13 @@ usage() {
 usage: agent-send [-w] [-m MODEL] <role|backend> <session-name> <message...>
        agent-send --list
        agent-send --roles
+       agent-send --models [backend]
 backends: $BACKENDS   roles: defined in $CONFIG
-  -w       allow writes (codex --full-auto, opencode --auto, claude acceptEdits)
-  -m       model override (passed to the backend's model flag)
-  --list   list sessions for the current directory
-  --roles  show configured roles
+  -w        allow writes (codex --full-auto, opencode --auto, claude acceptEdits)
+  -m        model override (passed to the backend's model flag)
+  --list    list sessions for the current directory
+  --roles   show configured roles
+  --models  list models currently available per backend (default: all installed)
 EOF
   exit 2
 }
@@ -32,6 +34,19 @@ case "${1:-}" in
 --roles)
   jq -r '.roles | to_entries[] | "\(.key): \(.value.backend)\(if .value.model then " · " + .value.model else "" end)\(if .value.write then " · write" else " · read-only" end)"' "$CONFIG" 2>/dev/null ||
     echo "agent-send: no roles configured at $CONFIG" >&2
+  exit 0
+  ;;
+--models)
+  for b in ${2:-$BACKENDS}; do
+    command -v "$b" >/dev/null || continue
+    echo "## $b"
+    case "$b" in
+    codex) codex debug models 2>/dev/null | jq -r '.models[] | select(.slug) | "\(.slug)\t\(.description // "")"' ;;
+    opencode) opencode models 2>/dev/null ;;
+    claude) echo "no list command; aliases always resolve to the latest model: opus, sonnet, haiku (full ids like claude-opus-4-8 also accepted)" ;;
+    esac
+    echo
+  done
   exit 0
   ;;
 esac

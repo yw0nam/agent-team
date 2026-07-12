@@ -1,7 +1,7 @@
 # agent-team
 
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg?style=flat-square)
 ![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude-8A2BE2?style=flat-square)
 
 **Turn one Claude Code into a tech lead with a team.** agent-team lets Claude
@@ -104,9 +104,12 @@ Ask Claude:
 
 > set up my agent team
 
-Claude detects installed CLIs, interviews you — which roles you want, which
-backend and model per role, write permission per role — writes
-`~/.config/agent-team/config.json`, and smoke-tests each role. Example:
+Claude detects installed CLIs, queries the models each backend can use
+**right now** (`agent-send --models` — codex and opencode expose live
+catalogs, so new releases show up without a plugin update), interviews you —
+which roles you want, which backend and model per role, write permission per
+role — writes `~/.config/agent-team/config.json`, and smoke-tests each role.
+Example:
 
 ```json
 {
@@ -137,6 +140,7 @@ agent-send impl parser "Tests fail: expected X got Y. Fix it."
 # Introspection
 agent-send --roles     # configured roles
 agent-send --list      # sessions for this directory
+agent-send --models    # models each backend can use right now
 
 # Escape hatch: bypass roles, talk to a backend directly
 agent-send -w -m gpt-5.5 codex quickfix "..."

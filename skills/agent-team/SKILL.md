@@ -23,11 +23,14 @@ If `~/.config/agent-team/config.json` is missing, or the user asks to
 set up / change their agent team:
 
 1. Detect installed CLIs: `for c in codex opencode claude; do command -v $c; done`
-2. Interview the user with AskUserQuestion: which roles they want (names are
+2. Query the models each installed backend can use right now:
+   `agent-send --models`. Model catalogs change too often to trust memory —
+   only offer names from this live list.
+3. Interview the user with AskUserQuestion: which roles they want (names are
    free-form, e.g. `spec-review`, `impl`, `docs`), which backend serves each
-   role, model per role (omit to use the CLI's own default), and whether the
-   role may write files.
-3. Write the config and confirm with `agent-send --roles`:
+   role, model per role picked from the step-2 list (omit to use the CLI's
+   own default), and whether the role may write files.
+4. Write the config and confirm with `agent-send --roles`:
 
 ```json
 {
@@ -39,8 +42,9 @@ set up / change their agent team:
 }
 ```
 
-4. Smoke-test each role with a trivial prompt — invalid model names only fail
-   at call time (e.g. ChatGPT-account codex rejects some models with a 400).
+5. Smoke-test each role with a trivial prompt — some models still fail only
+   at call time (e.g. ChatGPT-account codex rejects some catalog models with
+   a 400).
 
 ## When to Use
 
@@ -59,6 +63,7 @@ conversation's context (external agents only see what you put in the prompt).
 | Continue a conversation | same role/backend + same session name |
 | Show configured roles | `agent-send --roles` |
 | List sessions for this cwd | `agent-send --list` |
+| List live models per backend | `agent-send --models [backend]` |
 | Bypass roles (escape hatch) | `agent-send [-w] [-m MODEL] <backend> <name> "..."` |
 
 - Write permission and model come from the role; `-w`/`-m` override per call.
@@ -89,4 +94,4 @@ constraints. External agents see none of your conversation.
 | New session name for a follow-up | Context lost; reuse the exact name |
 | Auto-recreating an expired session | agent-send exits non-zero instead — context loss must be visible, not silent |
 | Merging delegated work unverified | You are the quality gate: run the tests, read the diff |
-| Guessing model ids in config | They fail at call time; verify with `opencode models` / a smoke call |
+| Offering model names from memory | Catalogs move fast (new releases monthly); list live ones with `agent-send --models`, then smoke-test |
