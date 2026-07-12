@@ -1,0 +1,22 @@
+{
+  "name": "yw0nam",
+  "description": "yw0nam's Claude Code plugins",
+  "owner": {
+    "name": "yw0nam",
+    "email": "spow2544@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "agent-team",
+      "source": "./",
+      "description": "Delegate work to external coding-agent CLIs (codex, opencode, claude) through session-persistent, role-based conversations",
+      "category": "development",
+      "tags": ["codex", "opencode", "delegation", "multi-agent", "orchestration"],
+      "author": {
+        "name": "yw0nam",
+        "email": "spow2544@gmail.com"
+      },
+      "homepage": "https://github.com/yw0nam/agent-team"
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+# agent-send — session-persistent messaging to coding-agent CLIs.
+# Role-based: `agent-send <role> <session-name> <msg...>` resolves backend/model/write
+# from the config. Low-level: `agent-send [-w] [-m MODEL] <backend> <session-name> <msg...>`.
+# Sessions are keyed by (cwd, backend, name); state is one file holding the session id.
+set -uo pipefail
+
+CONFIG="${AGENT_TEAM_CONFIG:-$HOME/.config/agent-team/config.json}"
+BACKENDS="codex opencode claude"
+
+usage() {
+  cat >&2 <<EOF
+usage: agent-send [-w] [-m MODEL] <role|backend> <session-name> <message...>
+       agent-send --list
+       agent-send --roles
+backends: $BACKENDS   roles: defined in $CONFIG
+  -w       allow writes (codex --full-auto, opencode --auto, claude acceptEdits)
+  -m       model override (passed to the backend's model flag)
+  --list   list sessions for the current directory
+  --roles  show configured roles
+EOF
+  exit 2
+}
+
+state_dir="/tmp/agent-team/$(pwd -P | sha1sum | cut -c1-12)"
+
+case "${1:-}" in
+--list)
+  ls -1 "$state_dir" 2>/dev/null
+  exit 0
+  ;;
+--roles)
+  jq -r '.roles | to_entries[] | "\(.key): \(.value.backend)\(if .value.model then " · " + .value.model else "" end)\(if .value.write then " · write" else " · read-only" end)"' "$CONFIG" 2>/dev/null ||
+    echo "agent-send: no roles configured at $CONFIG" >&2
+  exit 0
+  ;;
+esac
+
+write=0 model=""
+while [[ "${1:-}" == -* ]]; do
+  case "$1" in
+  -w) write=1; shift ;;
+  -m) model="${2:?-m needs a value}"; shift 2 ;;
+  *) usage ;;
+  esac
+done
+[[ $# -ge 3 ]] || usage
+target=$1 name=$2
+shift 2
+msg="$*"
+
+if [[ " $BACKENDS " == *" $target "* ]]; then
+  backend=$target
+else
+  [[ -f $CONFIG ]] || {
+    echo "agent-send: '$target' is not a backend ($BACKENDS) and no config exists at $CONFIG." >&2
+    echo "agent-send: define roles there (see the agent-team skill) or use a backend name." >&2
+    exit 1
+  }
+  backend=$(jq -r --arg r "$target" '.roles[$r].backend // empty' "$CONFIG")
+  [[ -n $backend ]] || {
+    echo "agent-send: unknown role '$target'. Configured roles: $(jq -r '.roles | keys | join(", ")' "$CONFIG")" >&2
+    exit 1
+  }
+  [[ " $BACKENDS " == *" $backend "* ]] || {
+    echo "agent-send: role '$target' maps to unsupported backend '$backend' ($BACKENDS)" >&2
+    exit 1
+  }
+  ((write)) || [[ $(jq -r --arg r "$target" '.roles[$r].write // false' "$CONFIG") != true ]] || write=1
+  [[ -n $model ]] || model=$(jq -r --arg r "$target" '.roles[$r].model // empty' "$CONFIG")
+fi
+
+command -v "$backend" >/dev/null || {
+  echo "agent-send: '$backend' is not installed" >&2
+  exit 127
+}
+
+mkdir -p "$state_dir"
+sf="$state_dir/$backend-$name"
+
+die_stale() {
+  echo "agent-send: resume failed for session '$name' (id: $(cat "$sf"))." >&2
+  echo "agent-send: if the session is gone, delete $sf and retry to start fresh." >&2
+  exit 1
+}
+
+case "$backend" in
+codex)
+  flags=(--skip-git-repo-check)
+  ((write)) && flags+=(--full-auto)
+  [[ -n $model ]] && flags+=(-m "$model")
+  if [[ -f $sf ]]; then
+    codex exec resume "$(cat "$sf")" "${flags[@]}" "$msg" || die_stale
+  else
+    out=$(codex exec "${flags[@]}" "$msg" 2>&1)
+    rc=$?
+    printf '%s\n' "$out"
+    [[ $rc -eq 0 ]] || exit "$rc"
+    id=$(grep -oP '^session id: \K\S+' <<<"$out" | head -1)
+    [[ -n $id ]] || {
+      echo "agent-send: could not extract codex session id" >&2
+      exit 1
+    }
+    printf '%s\n' "$id" >"$sf"
+  fi
+  ;;
+opencode)
+  flags=(--format json)
+  ((write)) && flags+=(--auto)
+  [[ -n $model ]] && flags+=(-m "$model")
+  if [[ -f $sf ]]; then
+    out=$(opencode run "${flags[@]}" --session "$(cat "$sf")" "$msg" 2>&1) || {
+      printf '%s\n' "$out"
+      die_stale
+    }
+  else
+    out=$(opencode run "${flags[@]}" "$msg" 2>&1)
+    rc=$?
+    [[ $rc -eq 0 ]] || {
+      printf '%s\n' "$out"
+      exit "$rc"
+    }
+    id=$(grep -oP '"sessionID":"\K[^"]+' <<<"$out" | head -1)
+    [[ -n $id ]] || {
+      printf '%s\n' "$out"
+      echo "agent-send: could not extract opencode session id" >&2
+      exit 1
+    }
+    printf '%s\n' "$id" >"$sf"
+  fi
+  # keep only assistant text from the JSON event stream
+  jq -rj 'select(.type == "text") | .part.text + "\n"' <<<"$out" 2>/dev/null ||
+    printf '%s\n' "$out"
+  ;;
+claude)
+  flags=(-p --output-format json)
+  ((write)) && flags+=(--permission-mode acceptEdits)
+  [[ -n $model ]] && flags+=(--model "$model")
+  if [[ -f $sf ]]; then
+    out=$(claude "${flags[@]}" --resume "$(cat "$sf")" "$msg" 2>&1) || {
+      printf '%s\n' "$out"
+      die_stale
+    }
+  else
+    out=$(claude "${flags[@]}" "$msg" 2>&1)
+    rc=$?
+    [[ $rc -eq 0 ]] || {
+      printf '%s\n' "$out"
+      exit "$rc"
+    }
+  fi
+  id=$(jq -r '.session_id // empty' <<<"$out" 2>/dev/null)
+  if [[ -n $id ]]; then
+    printf '%s\n' "$id" >"$sf" # claude may rotate ids on resume; always store the latest
+  elif [[ ! -f $sf ]]; then
+    printf '%s\n' "$out"
+    echo "agent-send: could not extract claude session id" >&2
+    exit 1
+  fi
+  jq -r '.result' <<<"$out" 2>/dev/null || printf '%s\n' "$out"
+  ;;
+esac

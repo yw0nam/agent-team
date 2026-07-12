@@ -1,0 +1,13 @@
+{
+  "name": "agent-team",
+  "description": "Delegate work to external coding-agent CLIs (codex, opencode, claude) through session-persistent, role-based conversations",
+  "version": "1.0.0",
+  "author": {
+    "name": "yw0nam",
+    "email": "spow2544@gmail.com"
+  },
+  "homepage": "https://github.com/yw0nam/agent-team",
+  "repository": "https://github.com/yw0nam/agent-team",
+  "license": "MIT",
+  "keywords": ["codex", "opencode", "delegation", "multi-agent", "orchestration"]
+}
