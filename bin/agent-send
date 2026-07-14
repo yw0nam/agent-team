@@ -104,10 +104,12 @@ codex)
   flags=(--skip-git-repo-check)
   ((write)) && flags+=(--full-auto)
   [[ -n $model ]] && flags+=(-m "$model")
+  # </dev/null: codex exec waits for stdin EOF; a backgrounded caller's open
+  # stdin pipe never sends one, hanging codex before its first turn.
   if [[ -f $sf ]]; then
-    codex exec resume "$(cat "$sf")" "${flags[@]}" "$msg" || die_stale
+    codex exec resume "$(cat "$sf")" "${flags[@]}" "$msg" </dev/null || die_stale
   else
-    out=$(codex exec "${flags[@]}" "$msg" 2>&1)
+    out=$(codex exec "${flags[@]}" "$msg" </dev/null 2>&1)
     rc=$?
     printf '%s\n' "$out"
     [[ $rc -eq 0 ]] || exit "$rc"
