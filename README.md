@@ -67,7 +67,7 @@ are free-form names you define once, per user.
 
 | Component | What it does |
 |---|---|
-| `skills/agent-team/` | The skill: when to delegate, the standard cycle, setup interview, common-mistakes table |
+| `skills/agent-team/` | The skill: `SKILL.md` routes to `workflows/setup.md` (config interview) or `workflows/delegate.md` (cycle, quick reference, common mistakes) |
 | `bin/agent-send` | ~160-line bash wrapper; on the Bash tool's PATH automatically while the plugin is enabled |
 | `.claude-plugin/marketplace.json` | This repo doubles as its own plugin marketplace |
 
