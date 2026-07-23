@@ -101,25 +101,58 @@ die_stale() {
 
 case "$backend" in
 codex)
-  flags=(--skip-git-repo-check)
-  ((write)) && flags+=(--full-auto)
+  # --json: the human-readable banner ("session id: ...") is not a stable
+  # contract — a CLI update can add a warning line, recolor, or reword it
+  # and silently break extraction after a successful, billable run. The
+  # JSONL event stream's thread_id field is the documented, structured id.
+  flags=(--skip-git-repo-check --json)
+  ((write)) && flags+=(-s workspace-write) # --full-auto is deprecated
   [[ -n $model ]] && flags+=(-m "$model")
   # </dev/null: codex exec waits for stdin EOF; a backgrounded caller's open
   # stdin pipe never sends one, hanging codex before its first turn.
   if [[ -f $sf ]]; then
-    codex exec resume "$(cat "$sf")" "${flags[@]}" "$msg" </dev/null || die_stale
+    out=$(codex exec resume "$(cat "$sf")" "${flags[@]}" "$msg" </dev/null 2>&1) || {
+      printf '%s\n' "$out"
+      die_stale
+    }
   else
-    out=$(codex exec "${flags[@]}" "$msg" </dev/null 2>&1)
+    # Run in the background and poll for the thread_id as soon as it
+    # appears instead of waiting for the whole command to finish, so a
+    # long task killed by an external timeout (e.g. the harness's default
+    # 2min Bash timeout when not backgrounded) stays resumable instead of
+    # being silently orphaned (see the same fix applied to opencode above).
+    tmp_out=$(mktemp)
+    codex exec "${flags[@]}" "$msg" </dev/null >"$tmp_out" 2>&1 &
+    pid=$!
+    id=""
+    while kill -0 "$pid" 2>/dev/null; do
+      id=$(sed -n 's/.*"thread_id":"\([^"]*\)".*/\1/p' "$tmp_out" | head -1)
+      [[ -n $id ]] && break
+      sleep 0.3
+    done
+    [[ -n $id ]] && printf '%s\n' "$id" >"$sf"
+    wait "$pid"
     rc=$?
-    printf '%s\n' "$out"
-    [[ $rc -eq 0 ]] || exit "$rc"
-    id=$(sed -n 's/^session id: \([^ ]*\).*/\1/p' <<<"$out" | head -1)
+    out=$(<"$tmp_out")
+    rm -f "$tmp_out"
+    [[ $rc -eq 0 ]] || {
+      printf '%s\n' "$out"
+      exit "$rc"
+    }
+    [[ -n $id ]] || id=$(sed -n 's/.*"thread_id":"\([^"]*\)".*/\1/p' <<<"$out" | head -1)
     [[ -n $id ]] || {
+      printf '%s\n' "$out"
       echo "agent-send: could not extract codex session id" >&2
       exit 1
     }
     printf '%s\n' "$id" >"$sf"
   fi
+  # keep only the final assistant message from the JSONL event stream;
+  # grep isolates real event lines first since codex prepends plain-text
+  # notices (e.g. "Reading additional input from stdin...") that aren't JSON
+  grep '^{' <<<"$out" |
+    jq -rj 'select(.type == "item.completed" and .item.type == "agent_message") | .item.text + "\n"' 2>/dev/null ||
+    printf '%s\n' "$out"
   ;;
 opencode)
   flags=(--format json)
