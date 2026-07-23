@@ -131,13 +131,32 @@ opencode)
       die_stale
     }
   else
-    out=$(opencode run "${flags[@]}" "$msg" 2>&1)
+    # Run in the background and poll for the sessionID as soon as it appears
+    # (it's in the first JSON event, within ~1s) instead of waiting for the
+    # whole command to finish. A long task killed by an external timeout
+    # (e.g. the harness's default 2min Bash timeout when not backgrounded)
+    # would otherwise leave the session fully untracked: opencode keeps
+    # running/burns tokens, but agent-send never learns its id and the next
+    # call starts a brand-new session instead of resuming.
+    tmp_out=$(mktemp)
+    opencode run "${flags[@]}" "$msg" >"$tmp_out" 2>&1 &
+    pid=$!
+    id=""
+    while kill -0 "$pid" 2>/dev/null; do
+      id=$(sed -n 's/.*"sessionID":"\([^"]*\)".*/\1/p' "$tmp_out" | head -1)
+      [[ -n $id ]] && break
+      sleep 0.3
+    done
+    [[ -n $id ]] && printf '%s\n' "$id" >"$sf"
+    wait "$pid"
     rc=$?
+    out=$(<"$tmp_out")
+    rm -f "$tmp_out"
     [[ $rc -eq 0 ]] || {
       printf '%s\n' "$out"
       exit "$rc"
     }
-    id=$(sed -n 's/.*"sessionID":"\([^"]*\)".*/\1/p' <<<"$out" | head -1)
+    [[ -n $id ]] || id=$(sed -n 's/.*"sessionID":"\([^"]*\)".*/\1/p' <<<"$out" | head -1)
     [[ -n $id ]] || {
       printf '%s\n' "$out"
       echo "agent-send: could not extract opencode session id" >&2
