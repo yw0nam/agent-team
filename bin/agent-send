@@ -106,7 +106,10 @@ codex)
   # and silently break extraction after a successful, billable run. The
   # JSONL event stream's thread_id field is the documented, structured id.
   flags=(--skip-git-repo-check --json)
-  ((write)) && flags+=(-s workspace-write) # --full-auto is deprecated
+  # -c, not -s: the same flags array feeds both `codex exec` and `codex exec
+  # resume`, and resume rejects -s/--sandbox ("unexpected argument '-s'").
+  # The config override is accepted by both. (--full-auto is deprecated.)
+  ((write)) && flags+=(-c sandbox_mode="workspace-write")
   [[ -n $model ]] && flags+=(-m "$model")
   # </dev/null: codex exec waits for stdin EOF; a backgrounded caller's open
   # stdin pipe never sends one, hanging codex before its first turn.
