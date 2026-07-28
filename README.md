@@ -1,7 +1,7 @@
 # agent-team
 
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.1.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.2.3-blue.svg?style=flat-square)
 ![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude-8A2BE2?style=flat-square)
 
 **Turn one Claude Code into a tech lead with a team.** agent-team lets Claude
