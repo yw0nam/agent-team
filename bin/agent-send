@@ -109,7 +109,11 @@ codex)
   # -c, not -s: the same flags array feeds both `codex exec` and `codex exec
   # resume`, and resume rejects -s/--sandbox ("unexpected argument '-s'").
   # The config override is accepted by both. (--full-auto is deprecated.)
-  ((write)) && flags+=(-c sandbox_mode="workspace-write")
+  # network_access: without it the sandbox blocks socket(), so asyncio can't
+  # build its self-pipe and starlette's TestClient hangs forever — pytest
+  # suites stall instead of failing. Scoped to delegated write sessions; the
+  # user's own codex keeps its default posture.
+  ((write)) && flags+=(-c sandbox_mode="workspace-write" -c sandbox_workspace_write.network_access=true)
   [[ -n $model ]] && flags+=(-m "$model")
   # </dev/null: codex exec waits for stdin EOF; a backgrounded caller's open
   # stdin pipe never sends one, hanging codex before its first turn.
