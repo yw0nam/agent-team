@@ -41,3 +41,4 @@ constraints. External agents see none of your conversation.
 | Merging delegated work unverified | You are the quality gate: run the tests, read the diff |
 | Offering model names from memory | Catalogs move fast (new releases monthly); list live ones with `agent-send --models`, then smoke-test |
 | Routing your harness's native models through agent-send (e.g. sonnet via `agent-send claude` from Claude Code) | The harness runs them natively — spawn its built-in subagent; agent-send is for reaching other agents' CLIs |
+| Assuming your skills travel to the delegated agent | They don't. codex reads `~/.agents/skills`, `~/.codex/skills`, `<repo>/.agents/skills`, `<repo>/.codex/skills` — never `~/.claude/skills`. Symlink the skill into one of those, or inline the rules into the spec |

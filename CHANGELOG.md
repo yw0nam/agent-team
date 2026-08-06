@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.5 — 2026-08-06
+
+- `agent-send`: codex write roles now add the repo's git common dir to
+  `sandbox_workspace_write.writable_roots` when it sits outside cwd. The
+  sandbox root is cwd, so in a linked worktree — or any subdirectory of a repo
+  — every git write failed with "Read-only file system"; codex then asked to
+  escalate and `exec` had nobody to answer, so delegated agents reported that
+  they could not use git at all. Only added when the git dir is actually
+  outside cwd, so a plain repo root is unaffected.
+- Skill: note that skills do not travel to delegated agents — codex never reads
+  `~/.claude/skills`.
+
 ## 1.2.4 — 2026-08-04
 
 - `agent-send`: codex write roles now also pass
