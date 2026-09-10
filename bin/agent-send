@@ -266,8 +266,18 @@ pi)
   printf '%s\n' "$id" >"$sf"
   # keep the assistant text of every turn; grep isolates the JSONL events from
   # pi's plain-text notices (e.g. the "creating a new session" warning)
-  grep '^{' <<<"$out" |
-    jq -rj 'select(.type == "turn_end") | (.message.content[]? | select(.type == "text") | .text + "\n")' 2>/dev/null ||
-    printf '%s\n' "$out"
+  events=$(grep '^{' <<<"$out")
+  text=$(jq -rj 'select(.type == "turn_end") | (.message.content[]? | select(.type == "text") | .text + "\n")' <<<"$events" 2>/dev/null)
+  if [[ -n $text ]]; then
+    printf '%s\n' "$text"
+  else
+    # pi exits 0 even when the turn failed (unknown model, provider 400, auth):
+    # the reason lives in the event stream as stopReason "error", so without
+    # this the caller gets an empty success and no idea anything went wrong.
+    printf '%s\n' "$out" >&2
+    err=$(jq -r 'select(.type == "turn_end") | .message.errorMessage // empty' <<<"$events" 2>/dev/null | head -1)
+    echo "agent-send: pi returned no assistant text${err:+ — $err}" >&2
+    exit 1
+  fi
   ;;
 esac

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.1 — 2026-09-10
+
+- `agent-send`: pi turns that fail now fail loudly. pi exits 0 even when the
+  turn errored (unknown model, provider 400, auth), and the reason only lives
+  in the event stream as `stopReason: "error"` — so a broken role printed
+  nothing at all and looked like a success. The error message now goes to
+  stderr with exit 1.
+- Docs: pi carries the reasoning level as a model suffix
+  (`"zai/glm-5.3-flash:high"`), so no config key is needed for it.
+
 ## 1.3.0 — 2026-09-10
 
 - `agent-send`: new `pi` backend. pi names its own sessions (`--session-id`

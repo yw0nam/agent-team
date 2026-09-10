@@ -1,7 +1,7 @@
 # agent-team
 
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.3.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.3.1-blue.svg?style=flat-square)
 ![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi-8A2BE2?style=flat-square)
 
 **Turn one Claude Code into a tech lead with a team.** agent-team lets Claude
@@ -124,6 +124,9 @@ Example:
 ```
 
 Role names are free-form. `model` is optional (backend default when omitted).
+For pi, the model string also carries the reasoning level as a suffix —
+`"zai/glm-5.3-flash:high"` (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`,
+`max`).
 `write: true` maps to each backend's write mode — codex sandbox
 `workspace-write`, opencode `--auto`, claude `--permission-mode acceptEdits`,
 pi its `edit`/`write` tools. Note pi has no sandbox: a read-only pi role only

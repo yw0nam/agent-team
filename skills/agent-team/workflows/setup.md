@@ -26,6 +26,8 @@ to set up or change their roles.
 }
 ```
 
+   For pi, a reasoning level can be appended to the model —
+   `"zai/glm-5.3-flash:high"` (off/minimal/low/medium/high/xhigh/max).
    pi has no sandbox: `write: false` there only removes its `edit`/`write`
    tools, and `bash` can still modify files — put roles that must not touch
    the tree on codex.
