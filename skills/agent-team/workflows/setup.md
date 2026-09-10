@@ -3,7 +3,7 @@
 Run this when `~/.config/agent-team/config.json` is missing, or the user asks
 to set up or change their roles.
 
-1. Detect installed CLIs: `for c in codex opencode claude; do command -v $c; done`
+1. Detect installed CLIs: `for c in codex opencode claude pi; do command -v $c; done`
 2. Query the models each installed backend can use right now:
    `agent-send --models`. Model catalogs change too often to trust memory —
    only offer names from this live list.
@@ -20,10 +20,15 @@ to set up or change their roles.
   "roles": {
     "spec-review": { "backend": "codex",    "model": "gpt-5.5", "write": false },
     "impl":        { "backend": "codex",    "model": "gpt-5.5", "write": true },
-    "docs":        { "backend": "opencode", "model": "opencode-go/qwen3.7-plus", "write": true }
+    "docs":        { "backend": "opencode", "model": "opencode-go/qwen3.7-plus", "write": true },
+    "research":    { "backend": "pi",       "model": "anthropic/claude-sonnet-5", "write": false }
   }
 }
 ```
+
+   pi has no sandbox: `write: false` there only removes its `edit`/`write`
+   tools, and `bash` can still modify files — put roles that must not touch
+   the tree on codex.
 
 5. Smoke-test each role with a trivial prompt — some models still fail only
    at call time (e.g. ChatGPT-account codex rejects some catalog models with

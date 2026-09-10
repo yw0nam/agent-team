@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 — 2026-09-10
+
+- `agent-send`: new `pi` backend. pi names its own sessions (`--session-id`
+  creates the id if missing, resumes it if not), so there is no id to scrape
+  and a run killed by a timeout can never be orphaned. `--models` lists pi's
+  catalog via `pi --list-models`. pi has no sandbox: `write: false` only drops
+  its `edit`/`write` tools, and `bash` can still modify files — keep hard
+  read-only roles on codex.
+
 ## 1.2.5 — 2026-08-06
 
 - `agent-send`: codex write roles now add the repo's git common dir to

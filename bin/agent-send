@@ -6,7 +6,7 @@
 set -uo pipefail
 
 CONFIG="${AGENT_TEAM_CONFIG:-$HOME/.config/agent-team/config.json}"
-BACKENDS="codex opencode claude"
+BACKENDS="codex opencode claude pi"
 
 usage() {
   cat >&2 <<EOF
@@ -15,7 +15,7 @@ usage: agent-send [-w] [-m MODEL] <role|backend> <session-name> <message...>
        agent-send --roles
        agent-send --models [backend]
 backends: $BACKENDS   roles: defined in $CONFIG
-  -w        allow writes (codex --full-auto, opencode --auto, claude acceptEdits)
+  -w        allow writes (codex sandbox write, opencode --auto, claude acceptEdits, pi edit+write tools)
   -m        model override (passed to the backend's model flag)
   --list    list sessions for the current directory
   --roles   show configured roles
@@ -44,6 +44,7 @@ case "${1:-}" in
     codex) codex debug models 2>/dev/null | jq -r '.models[] | select(.slug) | "\(.slug)\t\(.description // "")"' ;;
     opencode) opencode models 2>/dev/null ;;
     claude) echo "no list command; aliases always resolve to the latest model: opus, sonnet, haiku (full ids like claude-opus-4-8 also accepted)" ;;
+    pi) pi --list-models 2>/dev/null ;;
     esac
     echo
   done
@@ -243,5 +244,30 @@ claude)
     exit 1
   fi
   jq -r '.result' <<<"$out" 2>/dev/null || printf '%s\n' "$out"
+  ;;
+pi)
+  # pi names its own sessions: --session-id creates the id if it does not exist
+  # and resumes it if it does, so there is no id to scrape and a run killed by
+  # a timeout can never be orphaned. Session storage is per-project (cwd), which
+  # already matches agent-send's (cwd, backend, name) key; the state file is
+  # written only so --list shows the session.
+  id="agent-team-$name"
+  flags=(-p --mode json --session-id "$id")
+  # ponytail: pi has no sandbox, so read-only == drop the mutating tools.
+  # bash stays (a reviewer needs grep/ls) — this is a tool filter, not a jail.
+  ((write)) || flags+=(-xt edit,write)
+  [[ -n $model ]] && flags+=(--model "$model")
+  out=$(pi "${flags[@]}" "$msg" </dev/null 2>&1)
+  rc=$?
+  [[ $rc -eq 0 ]] || {
+    printf '%s\n' "$out"
+    exit "$rc"
+  }
+  printf '%s\n' "$id" >"$sf"
+  # keep the assistant text of every turn; grep isolates the JSONL events from
+  # pi's plain-text notices (e.g. the "creating a new session" warning)
+  grep '^{' <<<"$out" |
+    jq -rj 'select(.type == "turn_end") | (.message.content[]? | select(.type == "text") | .text + "\n")' 2>/dev/null ||
+    printf '%s\n' "$out"
   ;;
 esac

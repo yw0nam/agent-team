@@ -1,12 +1,13 @@
 # agent-team
 
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.2.5-blue.svg?style=flat-square)
-![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude-8A2BE2?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.3.0-blue.svg?style=flat-square)
+![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi-8A2BE2?style=flat-square)
 
 **Turn one Claude Code into a tech lead with a team.** agent-team lets Claude
 delegate work to external coding-agent CLIs — [codex](https://github.com/openai/codex),
-[opencode](https://opencode.ai), or another `claude` — through
+[opencode](https://opencode.ai), [pi](https://github.com/earendil-works/pi), or
+another `claude` — through
 **session-persistent, role-based conversations**. Claude writes the spec,
 farms out execution, sends review feedback to the *same* conversation, and
 keeps the final quality gate.
@@ -79,7 +80,7 @@ it — the CLIs themselves keep the real conversation history.
 
 - [Claude Code](https://code.claude.com) v2.x or later
 - At least one backend installed and authenticated:
-  `codex` · `opencode` · `claude`
+  `codex` · `opencode` · `claude` · `pi`
 - `jq`
 
 ## Installation
@@ -105,7 +106,7 @@ Ask Claude:
 > set up my agent team
 
 Claude detects installed CLIs, queries the models each backend can use
-**right now** (`agent-send --models` — codex and opencode expose live
+**right now** (`agent-send --models` — codex, opencode and pi expose live
 catalogs, so new releases show up without a plugin update), interviews you —
 which roles you want, which backend and model per role, write permission per
 role — writes `~/.config/agent-team/config.json`, and smoke-tests each role.
@@ -116,14 +117,18 @@ Example:
   "roles": {
     "spec-review": { "backend": "codex",    "model": "gpt-5.5", "write": false },
     "impl":        { "backend": "codex",    "model": "gpt-5.5", "write": true },
-    "docs":        { "backend": "opencode", "model": "opencode-go/qwen3.7-plus", "write": true }
+    "docs":        { "backend": "opencode", "model": "opencode-go/qwen3.7-plus", "write": true },
+    "research":    { "backend": "pi",       "model": "anthropic/claude-sonnet-5", "write": false }
   }
 }
 ```
 
 Role names are free-form. `model` is optional (backend default when omitted).
-`write: true` maps to each backend's write mode — codex `--full-auto`,
-opencode `--auto`, claude `--permission-mode acceptEdits`.
+`write: true` maps to each backend's write mode — codex sandbox
+`workspace-write`, opencode `--auto`, claude `--permission-mode acceptEdits`,
+pi its `edit`/`write` tools. Note pi has no sandbox: a read-only pi role only
+has those tools removed and could still write through `bash`, so use codex for
+roles that must not touch the tree.
 
 ## Usage
 
