@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.0 — 2026-09-11
+
+- Work logs. Write-enabled roles are now told, on every message, to append the
+  spec they were given plus what they did and why to
+  `<repo-root>/.agent-team/<session>.md`, and to reply with a report in fixed
+  sections — summary, changes, verification, notes, log path — the same shape
+  a harness subagent hands back. Logging the spec next to the notes is
+  what makes the log checkable later — the diff has its acceptance criteria
+  sitting above it. Delegation
+  stops dumping transcripts into the orchestrator's context, and the reasoning
+  behind a diff outlives the scrollback. The directory ignores itself, so logs
+  never show up in `git status`; read one back with `agent-send --log <name>`.
+  Read-only roles are unaffected — they cannot write, and their answer is the
+  deliverable.
+
 ## 1.3.1 — 2026-09-10
 
 - `agent-send`: pi turns that fail now fail loudly. pi exits 0 even when the

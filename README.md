@@ -1,7 +1,7 @@
 # agent-team
 
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.3.1-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.4.0-blue.svg?style=flat-square)
 ![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi-8A2BE2?style=flat-square)
 
 **Turn one Claude Code into a tech lead with a team.** agent-team lets Claude
@@ -69,8 +69,16 @@ are free-form names you define once, per user.
 | Component | What it does |
 |---|---|
 | `skills/agent-team/` | The skill: `SKILL.md` routes to `workflows/setup.md` (config interview) or `workflows/delegate.md` (cycle, quick reference, common mistakes) |
+| `<repo>/.agent-team/<session>.md` | Per-session work log: the spec sent, the agent's notes, appended per message; read it back with `agent-send --log <session>` |
 | `bin/agent-send` | ~160-line bash wrapper; on the Bash tool's PATH automatically while the plugin is enabled |
 | `.claude-plugin/marketplace.json` | This repo doubles as its own plugin marketplace |
+
+Write roles report like a colleague, not a transcript: every message tells
+them to append the spec they were given plus their own notes to
+`<repo-root>/.agent-team/<session>.md`, and to reply with a structured report (summary, changes, verification, notes,
+log path) instead of a transcript. The orchestrator's context stays clean and the
+detail is one `agent-send --log <session>` away. The directory ignores itself,
+so the logs never appear in `git status`.
 
 No MCP server, no daemon, no polling. `agent-send` maps each
 `(cwd, backend, session-name)` to the backend's native session id and resumes

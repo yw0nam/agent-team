@@ -14,19 +14,34 @@ usage: agent-send [-w] [-m MODEL] <role|backend> <session-name> <message...>
        agent-send --list
        agent-send --roles
        agent-send --models [backend]
+       agent-send --log <session-name>
 backends: $BACKENDS   roles: defined in $CONFIG
   -w        allow writes (codex sandbox write, opencode --auto, claude acceptEdits, pi edit+write tools)
   -m        model override (passed to the backend's model flag)
   --list    list sessions for the current directory
   --roles   show configured roles
   --models  list models currently available per backend (default: all installed)
+  --log     print a session's work log (write roles journal there; the reply
+            you get back is only the summary)
 EOF
   exit 2
 }
 
 state_dir="/tmp/agent-team/$(pwd -P | sha1sum | cut -c1-12)"
+# Work logs live in the tree the agent works on (worktrees isolate themselves),
+# not in state_dir: the point is that they are readable next to the diff.
+log_dir="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)/.agent-team"
 
 case "${1:-}" in
+--log)
+  f="$log_dir/${2:?--log needs a session name}.md"
+  [[ -f $f ]] || {
+    echo "agent-send: no work log at $f" >&2
+    exit 1
+  }
+  cat "$f"
+  exit 0
+  ;;
 --list)
   ls -1 "$state_dir" 2>/dev/null
   exit 0
@@ -99,6 +114,41 @@ die_stale() {
   echo "agent-send: if the session is gone, delete $sf and retry to start fresh." >&2
   exit 1
 }
+
+# One file per session: the spec, the agent's notes, its own summary. The
+# agent writes all of it — the wrapper only guarantees the directory exists.
+logfile="$log_dir/$name.md"
+
+if ((write)); then
+  mkdir -p "$log_dir"
+  # the directory ignores itself: work logs are scratch next to the diff, not
+  # repo content the user has to notice and clean out of `git status`
+  [[ -f $log_dir/.gitignore ]] || printf '*\n' >"$log_dir/.gitignore"
+  # Delegated agents keep the long story in the worktree and hand back only the
+  # summary — otherwise every delegation dumps a transcript into the
+  # orchestrator's context, and the reasoning is lost the moment it scrolls.
+  msg="$msg
+
+--- reporting protocol ---
+Append to $logfile — append only, never rewrite earlier entries:
+'## <ISO timestamp> — <one-line task>', then '### spec' holding the task above
+copied verbatim, then '### notes': what you did and why, decisions and the
+alternatives you rejected, commands you ran, anything you could not finish.
+Then reply with the report only — the reasoning stays in the log — using
+exactly these sections, each kept tight:
+
+## Summary
+2-4 sentences: what works now that did not before.
+## Changes
+one line per file: <absolute path> — what changed and why.
+## Verification
+the commands you ran and their results, or why you could not run them.
+## Notes
+assumptions, rejected alternatives worth knowing, follow-ups, blockers, or
+'none'.
+## Log
+$logfile"
+fi
 
 case "$backend" in
 codex)

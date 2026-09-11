@@ -9,6 +9,7 @@
 | Show configured roles | `agent-send --roles` |
 | List sessions for this cwd | `agent-send --list` |
 | List live models per backend | `agent-send --models [backend]` |
+| Read a session's work log | `agent-send --log <session-name>` |
 | Bypass roles (escape hatch) | `agent-send [-w] [-m MODEL] <backend> <name> "..."` |
 
 - Write permission and model come from the role; `-w`/`-m` override per call.
@@ -17,14 +18,37 @@
 - Long tasks: run via Bash `run_in_background: true` — the harness wakes you
   when the process exits; stdout is the reply. Launch independent tasks concurrently.
 
+## Work Logs
+
+Write-enabled roles are told, on every message, to append to
+`<repo-root>/.agent-team/<session-name>.md` — the spec you sent copied
+verbatim, then their notes (what they did, decisions, rejected alternatives,
+commands, anything unfinished) — and to reply with a structured report —
+`## Summary` / `## Changes` / `## Verification` / `## Notes` / `## Log`, the
+same shape a harness subagent hands back. So:
+
+- The log carries its own acceptance criteria: the spec sits right above the
+  notes, so a diff can be checked against what was actually asked — by you, by
+  a reviewer role, or by you tomorrow.
+- The reply is the report; the log is the transcript. Read the log with
+  `agent-send --log <name>` when the summary is too thin to verify against —
+  before re-asking the agent, which costs a turn.
+- The log is append-only and per session, so a follow-up lands under a new
+  heading in the same file and the whole thread stays readable.
+- `.agent-team/` ignores itself (a `.gitignore` holding `*`), so logs never
+  show up in `git status`. `git add -f` if you want to keep one.
+- Read-only roles get no protocol — they cannot write, and their answer is
+  already the deliverable.
+
 ## Standard Cycle
 
 1. Write the spec yourself.
 2. Send it to your review role (read-only) and fold in the feedback;
    re-ask in the SAME session until it passes.
 3. Delegate execution to write-enabled roles, in the background, in parallel.
-4. Verify results yourself (run tests, read diffs). On failure, send feedback
-   to the SAME session so the agent keeps its context.
+4. Verify results yourself (run tests, read diffs; `agent-send --log <name>`
+   for the reasoning behind a diff). On failure, send feedback to the SAME
+   session so the agent keeps its context.
 
 Prompts must be self-contained: absolute file paths, acceptance criteria,
 constraints. External agents see none of your conversation.
