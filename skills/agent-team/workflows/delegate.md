@@ -10,6 +10,7 @@
 | List sessions for this cwd | `agent-send --list` |
 | List live models per backend | `agent-send --models [backend]` |
 | Read a session's work log | `agent-send --log <session-name>` |
+| Amend a task already running | `agent-send --note <session-name> "..."` |
 | Bypass roles (escape hatch) | `agent-send [-w] [-m MODEL] <backend> <name> "..."` |
 
 - Write permission and model come from the role; `-w`/`-m` override per call.
@@ -39,6 +40,24 @@ same shape a harness subagent hands back. So:
   show up in `git status`. `git add -f` if you want to keep one.
 - Read-only roles get no protocol — they cannot write, and their answer is
   already the deliverable.
+
+## Changing Your Mind Mid-Run
+
+The CLIs are one-shot in non-interactive mode: nothing can be injected into a
+turn already in flight. `agent-send --note <name> "..."` instead appends to
+`.agent-team/<name>.inbox.md`, which write roles are told to re-read before
+each major step — they apply it, log it under `### amendment`, and empty the
+file.
+
+| Situation | Do this |
+|---|---|
+| Spec changed, agent is mid-run | `--note`; it lands at the next step boundary |
+| Change must take effect now | Kill the run, then send the corrected spec to the SAME session — the id is on disk, so context up to the last completed turn survives |
+| Turn already finished | Just send a normal follow-up message |
+
+Cooperative, not preemptive: a note arrives late if the agent is deep inside
+one long tool call, and not at all if the turn ended first. Worktrees make
+that cheap — wrong work gets reverted, not untangled.
 
 ## Standard Cycle
 

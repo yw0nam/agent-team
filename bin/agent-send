@@ -15,6 +15,7 @@ usage: agent-send [-w] [-m MODEL] <role|backend> <session-name> <message...>
        agent-send --roles
        agent-send --models [backend]
        agent-send --log <session-name>
+       agent-send --note <session-name> <text...>
 backends: $BACKENDS   roles: defined in $CONFIG
   -w        allow writes (codex sandbox write, opencode --auto, claude acceptEdits, pi edit+write tools)
   -m        model override (passed to the backend's model flag)
@@ -23,6 +24,8 @@ backends: $BACKENDS   roles: defined in $CONFIG
   --models  list models currently available per backend (default: all installed)
   --log     print a session's work log (write roles journal there; the reply
             you get back is only the summary)
+  --note    drop an amendment into a running session's inbox; the agent picks
+            it up at its next step boundary
 EOF
   exit 2
 }
@@ -33,6 +36,23 @@ state_dir="/tmp/agent-team/$(pwd -P | sha1sum | cut -c1-12)"
 log_dir="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)/.agent-team"
 
 case "${1:-}" in
+--note)
+  # Mid-run steering. The CLIs are one-shot in non-interactive mode — nothing
+  # can be injected into a turn already in flight — so the message goes to a
+  # file the agent is told to re-read between steps.
+  # ponytail: cooperative, not preemptive. The agent sees it at its next step
+  # boundary, so a note lands late if it is deep in one long tool call, and
+  # never if the turn already ended (send it as a normal message then). Kill
+  # the run if you need the change to take effect now.
+  n=${2:?--note needs a session name}
+  shift 2
+  [[ $# -ge 1 ]] || usage
+  mkdir -p "$log_dir"
+  [[ -f $log_dir/.gitignore ]] || printf '*\n' >"$log_dir/.gitignore"
+  printf -- '- [%s] %s\n' "$(date -Iseconds)" "$*" >>"$log_dir/$n.inbox.md"
+  echo "agent-send: note queued in $log_dir/$n.inbox.md" >&2
+  exit 0
+  ;;
 --log)
   f="$log_dir/${2:?--log needs a session name}.md"
   [[ -f $f ]] || {
@@ -130,9 +150,13 @@ if ((write)); then
   msg="$msg
 
 --- reporting protocol ---
+Before each major step, and once more before you report, read $log_dir/$name.inbox.md
+if it exists and is non-empty: it holds amendments to this task from the
+orchestrator. Apply them, record them in the log under '### amendment', then
+truncate the file to empty (keep the file).
 Append to $logfile — append only, never rewrite earlier entries:
 '## <ISO timestamp> — <one-line task>', then '### spec' holding the task above
-copied verbatim, then '### notes': what you did and why, decisions and the
+copied verbatim (the task only — never this protocol block), then '### notes': what you did and why, decisions and the
 alternatives you rejected, commands you ran, anything you could not finish.
 Then reply with the report only — the reasoning stays in the log — using
 exactly these sections, each kept tight:

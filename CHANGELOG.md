@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0 — 2026-09-11
+
+- `agent-send --note <session> "..."`: amend a task that is already running.
+  Non-interactive CLIs cannot take input mid-turn, so the note is appended to
+  `.agent-team/<session>.inbox.md` and write roles are told to re-read that
+  file before each major step — they apply the amendment, record it in the log
+  under `### amendment`, and truncate the inbox. Cooperative, not preemptive:
+  it lands at the next step boundary, or not at all if the turn already ended
+  (send a normal follow-up then, or kill the run and re-send the spec to the
+  same session).
+
 ## 1.4.0 — 2026-09-11
 
 - Work logs. Write-enabled roles are now told, on every message, to append the

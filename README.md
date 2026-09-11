@@ -1,7 +1,7 @@
 # agent-team
 
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.4.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.5.0-blue.svg?style=flat-square)
 ![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi-8A2BE2?style=flat-square)
 
 **Turn one Claude Code into a tech lead with a team.** agent-team lets Claude
@@ -79,6 +79,11 @@ them to append the spec they were given plus their own notes to
 log path) instead of a transcript. The orchestrator's context stays clean and the
 detail is one `agent-send --log <session>` away. The directory ignores itself,
 so the logs never appear in `git status`.
+
+Changed your mind mid-run? `agent-send --note <session> "..."` queues an
+amendment in the session's inbox; write roles re-read it between steps, apply
+it, and record it in the log. The CLIs cannot be interrupted mid-turn, so this
+is cooperative — it lands at the agent's next step boundary.
 
 No MCP server, no daemon, no polling. `agent-send` maps each
 `(cwd, backend, session-name)` to the backend's native session id and resumes
