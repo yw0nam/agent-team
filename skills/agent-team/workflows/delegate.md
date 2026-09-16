@@ -16,8 +16,15 @@
 - Write permission and model come from the role; `-w`/`-m` override per call.
 - Sessions are isolated per working directory (worktrees auto-isolate).
 - Name sessions by unit of work: one session per review thread / impl task.
-- Long tasks: run via Bash `run_in_background: true` — the harness wakes you
-  when the process exits; stdout is the reply. Launch independent tasks concurrently.
+- Long tasks: background them. Each `agent-send` is a plain process that exits
+  when the reply is complete, and stdout is the reply — so use whatever your
+  harness gives you, and launch independent tasks concurrently:
+
+| Harness | Background a delegation |
+|---|---|
+| Claude Code | Bash tool with `run_in_background: true`; the harness wakes you on exit |
+| Codex, or any shell-only harness | `nohup agent-send ... > /tmp/agent-team/<name>.out 2>&1 &`, then poll the file (no wake-up; check between your own steps) |
+| Nothing to spare | Run it in the foreground with a generous timeout and wait |
 
 ## Work Logs
 
@@ -83,5 +90,6 @@ constraints. External agents see none of your conversation.
 | Auto-recreating an expired session | agent-send exits non-zero instead — context loss must be visible, not silent |
 | Merging delegated work unverified | You are the quality gate: run the tests, read the diff |
 | Offering model names from memory | Catalogs move fast (new releases monthly); list live ones with `agent-send --models`, then smoke-test |
-| Routing your harness's native models through agent-send (e.g. sonnet via `agent-send claude` from Claude Code) | The harness runs them natively — spawn its built-in subagent; agent-send is for reaching other agents' CLIs |
-| Assuming your skills travel to the delegated agent | They don't. codex reads `~/.agents/skills`, `~/.codex/skills`, `<repo>/.agents/skills`, `<repo>/.codex/skills` — never `~/.claude/skills`. Symlink the skill into one of those, or inline the rules into the spec |
+| Routing your harness's native models through agent-send (e.g. sonnet via `agent-send claude` from Claude Code, or GPT via `agent-send codex` from Codex) | The harness runs them natively — spawn its built-in subagent; agent-send is for reaching other agents' CLIs |
+| Delegating from a sandboxed Codex session with default settings | The delegated CLI inherits the sandbox: no network, no write access to its own state dir. See the Codex section of [setup.md](setup.md) |
+| Assuming your skills travel to the delegated agent | They don't — every CLI reads its own dirs. codex: `~/.agents/skills`, `~/.codex/skills`, `<repo>/.agents/skills`, `<repo>/.codex/skills`. claude: `~/.claude/skills`. Symlink the skill into the target's dir, or inline the rules into the spec |

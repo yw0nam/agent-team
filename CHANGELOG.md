@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.6.0 — 2026-09-16
+
+- Codex is a first-class orchestrator, not just a backend. `codex plugin
+  marketplace add yw0nam/agent-team` reads the existing
+  `.claude-plugin/marketplace.json` as-is and `codex plugin add` loads the
+  skill — the only thing Codex does not do is put the plugin's `bin/` on PATH,
+  so `install.sh` links `agent-send` into `~/.local/bin` (and the skill into
+  `~/.codex/skills/` for a plain git clone, skipped when the plugin already
+  supplies it).
+- Skill and workflows are harness-neutral: the interview no longer assumes
+  AskUserQuestion, and backgrounding a long delegation is documented per
+  harness (Claude Code's background Bash vs. `nohup ... &` plus polling).
+- Documented the Codex sandbox trap: a delegated CLI inherits the spawning
+  session's sandbox, and the default `workspace-write` blocks the network
+  outright and makes the backend's own state dir read-only — so delegation
+  either fails or silently loses its sessions. Fix is a profile
+  (`~/.codex/agent-team.config.toml`) with `network_access = true` and the
+  backends' state dirs in `writable_roots`.
+
 ## 1.5.0 — 2026-09-11
 
 - `agent-send --note <session> "..."`: amend a task that is already running.

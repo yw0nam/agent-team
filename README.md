@@ -1,22 +1,24 @@
 # agent-team
 
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.5.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.6.0-blue.svg?style=flat-square)
 ![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi-8A2BE2?style=flat-square)
+![Harness](https://img.shields.io/badge/harness-Claude%20Code%20%C2%B7%20Codex-2ea44f?style=flat-square)
 
-**Turn one Claude Code into a tech lead with a team.** agent-team lets Claude
-delegate work to external coding-agent CLIs — [codex](https://github.com/openai/codex),
+**Turn one coding agent into a tech lead with a team.** agent-team lets your
+orchestrator — Claude Code or Codex — delegate work to external coding-agent
+CLIs — [codex](https://github.com/openai/codex),
 [opencode](https://opencode.ai), [pi](https://github.com/earendil-works/pi), or
 another `claude` — through
-**session-persistent, role-based conversations**. Claude writes the spec,
-farms out execution, sends review feedback to the *same* conversation, and
-keeps the final quality gate.
+**session-persistent, role-based conversations**. The orchestrator writes the
+spec, farms out execution, sends review feedback to the *same* conversation,
+and keeps the final quality gate.
 
 Think of it as `SendMessage` for external CLIs: every delegated conversation
 gets a durable name, and every follow-up resumes it with full context intact.
 
 ```
-You ──► Claude Code  (orchestrator: spec, judgment, quality gate)
+You ──► Claude Code / Codex  (orchestrator: spec, judgment, quality gate)
               │
               │  agent-send spec-review parser-spec "Review this spec ..."
               ├────► codex      session "parser-spec"   read-only
@@ -39,17 +41,18 @@ fixes for all three:
 - **Sessions are addressed by name, never by "last".** Parallel delegations
   can't hijack each other's threads. Git worktrees isolate automatically.
 - **Delegate execution, never judgment.** The skill hard-codes the cycle:
-  Claude writes the spec, external agents execute, Claude verifies. An expired
-  session fails loudly instead of silently starting a fresh one.
+  the orchestrator writes the spec, external agents execute, the orchestrator
+  verifies. An expired session fails loudly instead of silently starting a
+  fresh one.
 
 ## How it works
 
-You just talk to Claude. A typical session:
+You just talk to your orchestrator. A typical session:
 
 > **You:** Build the tokenizer module. Get the spec reviewed first, then
 > implement it, and have the docs written up.
 
-Claude, with this plugin enabled:
+The orchestrator, with this plugin enabled:
 
 1. Writes the spec itself, then sends it to your read-only review role:
    `agent-send spec-review tokenizer-spec "Review this spec: ..."`
@@ -70,8 +73,9 @@ are free-form names you define once, per user.
 |---|---|
 | `skills/agent-team/` | The skill: `SKILL.md` routes to `workflows/setup.md` (config interview) or `workflows/delegate.md` (cycle, quick reference, common mistakes) |
 | `<repo>/.agent-team/<session>.md` | Per-session work log: the spec sent, the agent's notes, appended per message; read it back with `agent-send --log <session>` |
-| `bin/agent-send` | ~160-line bash wrapper; on the Bash tool's PATH automatically while the plugin is enabled |
-| `.claude-plugin/marketplace.json` | This repo doubles as its own plugin marketplace |
+| `bin/agent-send` | ~160-line bash wrapper; Claude Code puts it on the Bash tool's PATH automatically, elsewhere `install.sh` links it |
+| `install.sh` | Links `agent-send` onto PATH (and the skill into `~/.codex/skills` for a plain git clone) — needed by every harness except Claude Code |
+| `.claude-plugin/marketplace.json` | This repo doubles as its own plugin marketplace; Codex reads the same manifest |
 
 Write roles report like a colleague, not a transcript: every message tells
 them to append the spec they were given plus their own notes to
@@ -91,34 +95,72 @@ it — the CLIs themselves keep the real conversation history.
 
 ## Requirements
 
-- [Claude Code](https://code.claude.com) v2.x or later
+- An orchestrator with a shell tool: [Claude Code](https://code.claude.com) v2.x+
+  or [Codex](https://github.com/openai/codex) v0.154+
 - At least one backend installed and authenticated:
   `codex` · `opencode` · `claude` · `pi`
 - `jq`
 
 ## Installation
 
-Register the marketplace and install, inside Claude Code:
+### Claude Code
 
 ```
 /plugin marketplace add yw0nam/agent-team
 /plugin install agent-team@yw0nam
 ```
 
-Or from the shell:
+Or from the shell: `claude plugin marketplace add yw0nam/agent-team && claude plugin install agent-team@yw0nam`.
+Nothing else to do — the plugin's `bin/` lands on the Bash tool's PATH.
+
+### Codex
+
+Codex reads the same marketplace manifest:
 
 ```bash
-claude plugin marketplace add yw0nam/agent-team
-claude plugin install agent-team@yw0nam
+codex plugin marketplace add yw0nam/agent-team
+codex plugin add agent-team@yw0nam
+~/.codex/plugins/cache/yw0nam/agent-team/*/install.sh   # puts agent-send on PATH
 ```
+
+The last step is the one Codex doesn't do for you: plugins contribute skills,
+not PATH entries, so `agent-send` has to be linked once (into `~/.local/bin`,
+or `AGENT_TEAM_BIN=<dir>` elsewhere). Re-run it after upgrading the plugin.
+
+### Any harness, from a clone
+
+```bash
+git clone https://github.com/yw0nam/agent-team && ./agent-team/install.sh
+```
+
+Links `agent-send` onto PATH, plus the skill into `~/.codex/skills/` when Codex
+is installed and the plugin isn't.
+
+### Codex sandbox
+
+A delegated CLI inherits the sandbox of the session that spawned it, and
+Codex's default `workspace-write` denies both the network and writes to the
+backend's own state dir — so delegation fails or loses its sessions. Write
+`~/.codex/agent-team.config.toml`:
+
+```toml
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+network_access = true
+# only the backends you delegate to
+writable_roots = ["~/.codex", "~/.claude", "~/.local/share/opencode", "~/.pi"]
+```
+
+and run `codex --profile agent-team`. Claude Code needs no equivalent.
 
 ## Setup
 
-Ask Claude:
+Ask your orchestrator:
 
 > set up my agent team
 
-Claude detects installed CLIs, queries the models each backend can use
+It detects installed CLIs, queries the models each backend can use
 **right now** (`agent-send --models` — codex, opencode and pi expose live
 catalogs, so new releases show up without a plugin update), interviews you —
 which roles you want, which backend and model per role, write permission per
@@ -148,8 +190,8 @@ roles that must not touch the tree.
 
 ## Usage
 
-Mostly you don't touch `agent-send` yourself — Claude drives it. The command,
-for when you do:
+Mostly you don't touch `agent-send` yourself — the orchestrator drives it. The
+command, for when you do:
 
 ```bash
 # Send as a role; first call creates the session
@@ -178,8 +220,9 @@ agent-send -w -m gpt-5.5 codex quickfix "..."
   file; a failed resume exits non-zero and tells you which file to delete.
   Context loss is always visible, never silent.
 - **Completion notification is free.** Each `agent-send` call is a normal
-  process that exits when the reply is complete — run it in the background
-  and your harness wakes Claude up. No hooks, no marker files.
+  process that exits when the reply is complete — background it and a harness
+  that watches processes (Claude Code) wakes you up; one that doesn't (Codex)
+  just polls the log. No hooks, no marker files.
 
 ## Philosophy
 
@@ -191,11 +234,13 @@ agent-send -w -m gpt-5.5 codex quickfix "..."
 ## Uninstall
 
 ```
-/plugin uninstall agent-team@yw0nam
+/plugin uninstall agent-team@yw0nam      # Claude Code
+codex plugin remove agent-team@yw0nam    # Codex
 ```
 
-Config (`~/.config/agent-team/`) and session state (`/tmp/agent-team/`) are
-plain files — delete them anytime.
+Then `rm ~/.local/bin/agent-send` if `install.sh` linked it. Config
+(`~/.config/agent-team/`) and session state (`/tmp/agent-team/`) are plain
+files — delete them anytime.
 
 ## License
 
