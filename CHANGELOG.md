@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.7.0 — 2026-09-18
+
+- **Breaking: read-only roles are gone.** `-w` and the config's `write` key are
+  removed; every role runs in its backend's write mode. The reporting protocol
+  has each role journal to `.agent-team/<session>.md` — a role that cannot
+  write cannot do that, so a review role was getting no protocol and no
+  structure at all. Scope a role by the worktree you send it to, not by taking
+  its tools away. Existing configs keep working; `write` is ignored.
+  Side effect: this removes a cache break. pi implements read-only as a tool
+  filter (`-xt edit,write`) and pins a cache breakpoint to the last tool, so
+  sending `-w` to an existing read-only pi session invalidated its whole
+  prefix — measured at cacheRead 1,664 -> 320.
+- `agent-send` returns only the final assistant message. codex emits an
+  `agent_message` for every preamble it narrates between tool calls and pi a
+  `turn_end` per turn; both filters kept all of them, so a delegation handed
+  the orchestrator its entire narration instead of the report the protocol
+  asks for — 28 messages / 14,728 characters on one real task. A run that ends
+  without a final assistant text now fails loudly instead of returning
+  narration; the raw stream still goes to stderr.
+
 ## 1.6.0 — 2026-09-16
 
 - Codex is a first-class orchestrator, not just a backend. `codex plugin

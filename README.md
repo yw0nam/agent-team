@@ -21,11 +21,11 @@ gets a durable name, and every follow-up resumes it with full context intact.
 You ──► Claude Code / Codex  (orchestrator: spec, judgment, quality gate)
               │
               │  agent-send spec-review parser-spec "Review this spec ..."
-              ├────► codex      session "parser-spec"   read-only
+              ├────► codex      session "parser-spec"
               │  agent-send impl parser "Implement per SPEC ..."
-              ├────► codex      session "parser"        write-enabled
+              ├────► codex      session "parser"
               │  agent-send docs parser-docs "Document the module ..."
-              └────► opencode   session "parser-docs"   write-enabled
+              └────► opencode   session "parser-docs"
 ```
 
 ## Why
@@ -54,12 +54,11 @@ You just talk to your orchestrator. A typical session:
 
 The orchestrator, with this plugin enabled:
 
-1. Writes the spec itself, then sends it to your read-only review role:
+1. Writes the spec itself, then sends it to your review role:
    `agent-send spec-review tokenizer-spec "Review this spec: ..."`
 2. Folds feedback in and re-asks **in the same session** until it passes —
    the reviewer remembers its previous objections.
-3. Delegates implementation and docs to write-enabled roles **in parallel,
-   in the background**: `agent-send impl tokenizer "..."`,
+3. Delegates implementation and docs **in parallel, in the background**: `agent-send impl tokenizer "..."`,
    `agent-send docs tokenizer-docs "..."`
 4. Runs the tests itself. On failure, sends the failing output back to the
    `impl` session — the agent that wrote the code debugs it with full context.
@@ -163,17 +162,17 @@ Ask your orchestrator:
 It detects installed CLIs, queries the models each backend can use
 **right now** (`agent-send --models` — codex, opencode and pi expose live
 catalogs, so new releases show up without a plugin update), interviews you —
-which roles you want, which backend and model per role, write permission per
-role — writes `~/.config/agent-team/config.json`, and smoke-tests each role.
+which roles you want, which backend and model per role — writes
+`~/.config/agent-team/config.json`, and smoke-tests each role.
 Example:
 
 ```json
 {
   "roles": {
-    "spec-review": { "backend": "codex",    "model": "gpt-5.5", "write": false },
-    "impl":        { "backend": "codex",    "model": "gpt-5.5", "write": true },
-    "docs":        { "backend": "opencode", "model": "opencode-go/qwen3.7-plus", "write": true },
-    "research":    { "backend": "pi",       "model": "anthropic/claude-sonnet-5", "write": false }
+    "spec-review": { "backend": "codex",    "model": "gpt-5.5" },
+    "impl":        { "backend": "codex",    "model": "gpt-5.5" },
+    "docs":        { "backend": "opencode", "model": "opencode-go/qwen3.7-plus" },
+    "research":    { "backend": "pi",       "model": "anthropic/claude-sonnet-5" }
   }
 }
 ```
@@ -182,11 +181,11 @@ Role names are free-form. `model` is optional (backend default when omitted).
 For pi, the model string also carries the reasoning level as a suffix —
 `"zai/glm-5.3-flash:high"` (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`,
 `max`).
-`write: true` maps to each backend's write mode — codex sandbox
-`workspace-write`, opencode `--auto`, claude `--permission-mode acceptEdits`,
-pi its `edit`/`write` tools. Note pi has no sandbox: a read-only pi role only
-has those tools removed and could still write through `bash`, so use codex for
-roles that must not touch the tree.
+Every role can write, because every role journals its work to
+`.agent-team/<session>.md` — codex runs with sandbox `workspace-write`,
+opencode `--auto`, claude `--permission-mode acceptEdits`, pi with its
+`edit`/`write` tools. Scope a role by the worktree you send it to, not by
+taking its tools away.
 
 ## Usage
 
@@ -206,7 +205,7 @@ agent-send --list      # sessions for this directory
 agent-send --models    # models each backend can use right now
 
 # Escape hatch: bypass roles, talk to a backend directly
-agent-send -w -m gpt-5.5 codex quickfix "..."
+agent-send -m gpt-5.5 codex quickfix "..."
 ```
 
 ## Design notes

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # agent-send — session-persistent messaging to coding-agent CLIs.
-# Role-based: `agent-send <role> <session-name> <msg...>` resolves backend/model/write
-# from the config. Low-level: `agent-send [-w] [-m MODEL] <backend> <session-name> <msg...>`.
+# Role-based: `agent-send <role> <session-name> <msg...>` resolves backend/model
+# from the config. Low-level: `agent-send [-m MODEL] <backend> <session-name> <msg...>`.
 # Sessions are keyed by (cwd, backend, name); state is one file holding the session id.
 set -uo pipefail
 
@@ -10,20 +10,19 @@ BACKENDS="codex opencode claude pi"
 
 usage() {
   cat >&2 <<EOF
-usage: agent-send [-w] [-m MODEL] <role|backend> <session-name> <message...>
+usage: agent-send [-m MODEL] <role|backend> <session-name> <message...>
        agent-send --list
        agent-send --roles
        agent-send --models [backend]
        agent-send --log <session-name>
        agent-send --note <session-name> <text...>
 backends: $BACKENDS   roles: defined in $CONFIG
-  -w        allow writes (codex sandbox write, opencode --auto, claude acceptEdits, pi edit+write tools)
   -m        model override (passed to the backend's model flag)
   --list    list sessions for the current directory
   --roles   show configured roles
   --models  list models currently available per backend (default: all installed)
-  --log     print a session's work log (write roles journal there; the reply
-            you get back is only the summary)
+  --log     print a session's work log (roles journal there; the reply you
+            get back is only the summary)
   --note    drop an amendment into a running session's inbox; the agent picks
             it up at its next step boundary
 EOF
@@ -67,7 +66,7 @@ case "${1:-}" in
   exit 0
   ;;
 --roles)
-  jq -r '.roles | to_entries[] | "\(.key): \(.value.backend)\(if .value.model then " · " + .value.model else "" end)\(if .value.write then " · write" else " · read-only" end)"' "$CONFIG" 2>/dev/null ||
+  jq -r '.roles | to_entries[] | "\(.key): \(.value.backend)\(if .value.model then " · " + .value.model else "" end)"' "$CONFIG" 2>/dev/null ||
     echo "agent-send: no roles configured at $CONFIG" >&2
   exit 0
   ;;
@@ -87,10 +86,9 @@ case "${1:-}" in
   ;;
 esac
 
-write=0 model=""
+model=""
 while [[ "${1:-}" == -* ]]; do
   case "$1" in
-  -w) write=1; shift ;;
   -m) model="${2:?-m needs a value}"; shift 2 ;;
   *) usage ;;
   esac
@@ -117,7 +115,6 @@ else
     echo "agent-send: role '$target' maps to unsupported backend '$backend' ($BACKENDS)" >&2
     exit 1
   }
-  ((write)) || [[ $(jq -r --arg r "$target" '.roles[$r].write // false' "$CONFIG") != true ]] || write=1
   [[ -n $model ]] || model=$(jq -r --arg r "$target" '.roles[$r].model // empty' "$CONFIG")
 fi
 
@@ -139,15 +136,14 @@ die_stale() {
 # agent writes all of it — the wrapper only guarantees the directory exists.
 logfile="$log_dir/$name.md"
 
-if ((write)); then
-  mkdir -p "$log_dir"
-  # the directory ignores itself: work logs are scratch next to the diff, not
-  # repo content the user has to notice and clean out of `git status`
-  [[ -f $log_dir/.gitignore ]] || printf '*\n' >"$log_dir/.gitignore"
-  # Delegated agents keep the long story in the worktree and hand back only the
-  # summary — otherwise every delegation dumps a transcript into the
-  # orchestrator's context, and the reasoning is lost the moment it scrolls.
-  msg="$msg
+mkdir -p "$log_dir"
+# the directory ignores itself: work logs are scratch next to the diff, not
+# repo content the user has to notice and clean out of `git status`
+[[ -f $log_dir/.gitignore ]] || printf '*\n' >"$log_dir/.gitignore"
+# Delegated agents keep the long story in the worktree and hand back only the
+# summary — otherwise every delegation dumps a transcript into the
+# orchestrator's context, and the reasoning is lost the moment it scrolls.
+msg="$msg
 
 --- reporting protocol ---
 Before each major step, and once more before you report, read $log_dir/$name.inbox.md
@@ -172,7 +168,6 @@ assumptions, rejected alternatives worth knowing, follow-ups, blockers, or
 'none'.
 ## Log
 $logfile"
-fi
 
 case "$backend" in
 codex)
@@ -186,18 +181,16 @@ codex)
   # The config override is accepted by both. (--full-auto is deprecated.)
   # network_access: without it the sandbox blocks socket(), so asyncio can't
   # build its self-pipe and starlette's TestClient hangs forever — pytest
-  # suites stall instead of failing. Scoped to delegated write sessions; the
-  # user's own codex keeps its default posture.
-  ((write)) && {
-    flags+=(-c sandbox_mode="workspace-write" -c sandbox_workspace_write.network_access=true)
-    # The sandbox root is cwd, but in a linked worktree (or any subdirectory of
-    # a repo) the real git dir lives outside it, so every git write dies with
-    # "Read-only file system". codex then asks to escalate, and `exec` has
-    # nobody to answer — the agent reports it simply cannot use git.
-    gd=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
-    [[ -n $gd && $gd != "$(pwd -P)"/* ]] &&
-      flags+=(-c "sandbox_workspace_write.writable_roots=[\"$gd\"]")
-  }
+  # suites stall instead of failing. Scoped to delegated sessions; the user's
+  # own codex keeps its default posture.
+  flags+=(-c sandbox_mode="workspace-write" -c sandbox_workspace_write.network_access=true)
+  # The sandbox root is cwd, but in a linked worktree (or any subdirectory of a
+  # repo) the real git dir lives outside it, so every git write dies with
+  # "Read-only file system". codex then asks to escalate, and `exec` has nobody
+  # to answer — the agent reports it simply cannot use git.
+  gd=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+  [[ -n $gd && $gd != "$(pwd -P)"/* ]] &&
+    flags+=(-c "sandbox_workspace_write.writable_roots=[\"$gd\"]")
   [[ -n $model ]] && flags+=(-m "$model")
   # </dev/null: codex exec waits for stdin EOF; a backgrounded caller's open
   # stdin pipe never sends one, hanging codex before its first turn.
@@ -238,16 +231,18 @@ codex)
     }
     printf '%s\n' "$id" >"$sf"
   fi
-  # keep only the final assistant message from the JSONL event stream;
-  # grep isolates real event lines first since codex prepends plain-text
-  # notices (e.g. "Reading additional input from stdin...") that aren't JSON
+  # keep only the final assistant message from the JSONL event stream: codex
+  # emits an agent_message for every preamble it narrates between tool calls,
+  # and only the last one is the report. grep isolates real event lines first
+  # since codex prepends plain-text notices (e.g. "Reading additional input
+  # from stdin...") that aren't JSON
   grep '^{' <<<"$out" |
-    jq -rj 'select(.type == "item.completed" and .item.type == "agent_message") | .item.text + "\n"' 2>/dev/null ||
+    jq -rs '[.[] | select(.type == "item.completed" and .item.type == "agent_message") | .item.text] | last // empty' 2>/dev/null ||
     printf '%s\n' "$out"
   ;;
 opencode)
   flags=(--format json)
-  ((write)) && flags+=(--auto)
+  flags+=(--auto)
   [[ -n $model ]] && flags+=(-m "$model")
   if [[ -f $sf ]]; then
     out=$(opencode run "${flags[@]}" --session "$(cat "$sf")" "$msg" 2>&1) || {
@@ -294,7 +289,7 @@ opencode)
   ;;
 claude)
   flags=(-p --output-format json)
-  ((write)) && flags+=(--permission-mode acceptEdits)
+  flags+=(--permission-mode acceptEdits)
   [[ -n $model ]] && flags+=(--model "$model")
   if [[ -f $sf ]]; then
     out=$(claude "${flags[@]}" --resume "$(cat "$sf")" "$msg" 2>&1) || {
@@ -327,9 +322,6 @@ pi)
   # written only so --list shows the session.
   id="agent-team-$name"
   flags=(-p --mode json --session-id "$id")
-  # ponytail: pi has no sandbox, so read-only == drop the mutating tools.
-  # bash stays (a reviewer needs grep/ls) — this is a tool filter, not a jail.
-  ((write)) || flags+=(-xt edit,write)
   [[ -n $model ]] && flags+=(--model "$model")
   out=$(pi "${flags[@]}" "$msg" </dev/null 2>&1)
   rc=$?
@@ -338,10 +330,11 @@ pi)
     exit "$rc"
   }
   printf '%s\n' "$id" >"$sf"
-  # keep the assistant text of every turn; grep isolates the JSONL events from
-  # pi's plain-text notices (e.g. the "creating a new session" warning)
+  # keep only the last turn's assistant text — the earlier turns are the model
+  # narrating between tool calls, not the report; grep isolates the JSONL
+  # events from pi's plain-text notices (e.g. "creating a new session")
   events=$(grep '^{' <<<"$out")
-  text=$(jq -rj 'select(.type == "turn_end") | (.message.content[]? | select(.type == "text") | .text + "\n")' <<<"$events" 2>/dev/null)
+  text=$(jq -rs '[.[] | select(.type == "turn_end")] | last // empty | [.message.content[]? | select(.type == "text") | .text] | join("\n")' <<<"$events" 2>/dev/null)
   if [[ -n $text ]]; then
     printf '%s\n' "$text"
   else

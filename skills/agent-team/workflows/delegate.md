@@ -11,9 +11,9 @@
 | List live models per backend | `agent-send --models [backend]` |
 | Read a session's work log | `agent-send --log <session-name>` |
 | Amend a task already running | `agent-send --note <session-name> "..."` |
-| Bypass roles (escape hatch) | `agent-send [-w] [-m MODEL] <backend> <name> "..."` |
+| Bypass roles (escape hatch) | `agent-send [-m MODEL] <backend> <name> "..."` |
 
-- Write permission and model come from the role; `-w`/`-m` override per call.
+- Model comes from the role; `-m` overrides per call. Every role can write.
 - Sessions are isolated per working directory (worktrees auto-isolate).
 - Name sessions by unit of work: one session per review thread / impl task.
 - Long tasks: background them. Each `agent-send` is a plain process that exits
@@ -28,7 +28,7 @@
 
 ## Work Logs
 
-Write-enabled roles are told, on every message, to append to
+Every role is told, on every message, to append to
 `<repo-root>/.agent-team/<session-name>.md` — the spec you sent copied
 verbatim, then their notes (what they did, decisions, rejected alternatives,
 commands, anything unfinished) — and to reply with a structured report —
@@ -45,14 +45,12 @@ same shape a harness subagent hands back. So:
   heading in the same file and the whole thread stays readable.
 - `.agent-team/` ignores itself (a `.gitignore` holding `*`), so logs never
   show up in `git status`. `git add -f` if you want to keep one.
-- Read-only roles get no protocol — they cannot write, and their answer is
-  already the deliverable.
 
 ## Changing Your Mind Mid-Run
 
 The CLIs are one-shot in non-interactive mode: nothing can be injected into a
 turn already in flight. `agent-send --note <name> "..."` instead appends to
-`.agent-team/<name>.inbox.md`, which write roles are told to re-read before
+`.agent-team/<name>.inbox.md`, which roles are told to re-read before
 each major step — they apply it, log it under `### amendment`, and empty the
 file.
 
@@ -69,9 +67,9 @@ that cheap — wrong work gets reverted, not untangled.
 ## Standard Cycle
 
 1. Write the spec yourself.
-2. Send it to your review role (read-only) and fold in the feedback;
+2. Send it to your review role and fold in the feedback;
    re-ask in the SAME session until it passes.
-3. Delegate execution to write-enabled roles, in the background, in parallel.
+3. Delegate execution, in the background, in parallel.
 4. Verify results yourself (run tests, read diffs; `agent-send --log <name>`
    for the reasoning behind a diff). On failure, send feedback to the SAME
    session so the agent keeps its context.
@@ -83,7 +81,6 @@ constraints. External agents see none of your conversation.
 
 | Mistake | Reality |
 |---|---|
-| Expecting delegated agents to write files with a read-only role | Non-interactive CLIs block or sandbox writes; use a write-enabled role or `-w` |
 | Capturing session ids in shell variables | Shell state dies between Bash calls; agent-send persists ids on disk |
 | Resume-by-"last" (`codex exec resume --last`) | Races against parallel sessions — always address by session name |
 | New session name for a follow-up | Context lost; reuse the exact name |
