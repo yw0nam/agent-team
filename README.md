@@ -181,7 +181,7 @@ Example:
 Role names are free-form. `model` is optional (backend default when omitted).
 For pi, the model string also carries the reasoning level as a suffix —
 `"zai/glm-5.3-flash:high"` (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`,
-`max`). agy bakes it into the model id instead — `gemini-3.8-flash-high`,
+`max`). agy picks it by model id instead (no `--effort`) — `gemini-3.8-flash-high`,
 straight from `agent-send --models agy`.
 Every role can write, because every role journals its work to
 `.agent-team/<session>.md` — codex runs with sandbox `workspace-write`,

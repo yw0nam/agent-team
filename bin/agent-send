@@ -373,8 +373,14 @@ agy)
     # the silent context loss agent-send exists to prevent
     # ponytail: post-hoc — agy has no dry-run resume, so a dead id still costs
     # one orphaned turn (and a stray log entry) before this fires.
-    [[ $rc -eq 0 && $id == "$(cat "$sf")" ]] || {
+    # a failed run (quota, network) is not a dead id: keep the session file
+    [[ $rc -eq 0 ]] || {
       printf '%s\n' "$out"
+      exit "$rc"
+    }
+    [[ $id == "$(cat "$sf")" ]] || {
+      printf '%s\n' "$out"
+      echo "agent-send: agy started a new conversation ${id:-?} instead — to keep its turn, write that id into $sf" >&2
       die_stale
     }
   else
@@ -390,7 +396,7 @@ agy)
   text=$(jq -r 'select(.status == "SUCCESS") | .response // empty' <<<"$res")
   [[ -n $text ]] || {
     printf '%s\n' "$out" >&2
-    echo "agent-send: agy returned no report — $(jq -r '[.status, .error // empty, (.denied_actions // [] | map("denied " + .display_name) | .[])] | join(", ")' <<<"$res")" >&2
+    echo "agent-send: agy returned no report — $(jq -r '[.status, (.error // empty | if type == "string" then . else tojson end), (.denied_actions // [] | map("denied " + .display_name) | .[])] | join(", ")' <<<"$res")" >&2
     exit 1
   }
   printf '%s\n' "$text"

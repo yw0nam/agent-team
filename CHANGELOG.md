@@ -6,7 +6,9 @@
   `--conversation <id>`, taken from the JSON envelope's `conversation_id`;
   `--models` lists `agy models`. An unknown conversation id only warns and
   starts a fresh conversation with exit 0, so agent-send compares the returned
-  id with the stored one and fails loudly instead of losing context. agy runs
+  id with the stored one and fails loudly instead of losing context. The error
+  names the new id so its turn can be kept; a resume that merely fails
+  (quota, network) exits with its own code and keeps the session file. agy runs
   with `--sandbox --dangerously-skip-permissions`: headless agy soft-denies
   every tool not allow-listed and then ends the turn with `SUCCESS` and an
   empty response — one denied `date` killed the first smoke test. An empty

@@ -32,7 +32,7 @@ to set up or change their roles.
 
    For pi, a reasoning level can be appended to the model —
    `"zai/glm-5.3-flash:high"` (off/minimal/low/medium/high/xhigh/max). agy
-   bakes it into the model id instead (`gemini-3.8-flash-high`).
+   picks it by model id instead (no `--effort`): `gemini-3.8-flash-high`.
    Every role can write — the reporting protocol has each one journal to
    `.agent-team/<session>.md`, which a read-only role could not do. Scope a
    role by the worktree you send it to, not by taking its tools away.
