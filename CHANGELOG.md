@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.8.0 — 2026-10-02
+
+- `agent-send`: new `agy` backend (Antigravity CLI). Sessions resume by
+  `--conversation <id>`, taken from the JSON envelope's `conversation_id`;
+  `--models` lists `agy models`. An unknown conversation id only warns and
+  starts a fresh conversation with exit 0, so agent-send compares the returned
+  id with the stored one and fails loudly instead of losing context. agy runs
+  with `--sandbox --dangerously-skip-permissions`: headless agy soft-denies
+  every tool not allow-listed and then ends the turn with `SUCCESS` and an
+  empty response — one denied `date` killed the first smoke test. An empty
+  response now fails loudly with the denied actions.
+
 ## 1.7.0 — 2026-09-18
 
 - **Breaking: read-only roles are gone.** `-w` and the config's `write` key are

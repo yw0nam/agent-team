@@ -6,7 +6,7 @@
 set -uo pipefail
 
 CONFIG="${AGENT_TEAM_CONFIG:-$HOME/.config/agent-team/config.json}"
-BACKENDS="codex opencode claude pi"
+BACKENDS="codex opencode claude pi agy"
 
 usage() {
   cat >&2 <<EOF
@@ -79,6 +79,7 @@ case "${1:-}" in
     opencode) opencode models 2>/dev/null ;;
     claude) echo "no list command; aliases always resolve to the latest model: opus, sonnet, haiku (full ids like claude-opus-4-8 also accepted)" ;;
     pi) pi --list-models 2>/dev/null ;;
+    agy) agy models 2>/dev/null | grep -v '^Fetching' ;;
     esac
     echo
   done
@@ -346,5 +347,52 @@ pi)
     echo "agent-send: pi returned no assistant text${err:+ — $err}" >&2
     exit 1
   fi
+  ;;
+agy)
+  # Antigravity CLI. -p takes the prompt as its own value (a bare `-p` followed
+  # by a flag errors out), so the message is attached with `=`.
+  # Print mode soft-denies every tool not allow-listed in settings, and one
+  # denied shell command (even `date` for the log timestamp) ends the turn
+  # with no report. So: approve all tools, but run the terminal in agy's OS
+  # sandbox — the same posture as codex's workspace-write. No --add-dir for
+  # the log dir: agy then treats it as "the current directory" and writes the
+  # task's files there; the log at the repo root is reachable without it.
+  flags=(--output-format json --sandbox --dangerously-skip-permissions)
+  [[ -n $model ]] && flags+=(--model "$model")
+  [[ -f $sf ]] && flags+=(--conversation "$(cat "$sf")")
+  # ponytail: synchronous like claude — a run killed by an external timeout
+  # before the reply is orphaned; stream-json emits conversation_id early if
+  # that ever bites.
+  out=$(agy "${flags[@]}" -p="$msg" </dev/null 2>&1)
+  rc=$?
+  # agy prints plain-text warnings next to the JSON envelope
+  res=$(grep '^{' <<<"$out" | tail -1)
+  id=$(jq -r '.conversation_id // empty' <<<"$res" 2>/dev/null)
+  if [[ -f $sf ]]; then
+    # an unknown --conversation only warns and starts a fresh one, exit 0 —
+    # the silent context loss agent-send exists to prevent
+    # ponytail: post-hoc — agy has no dry-run resume, so a dead id still costs
+    # one orphaned turn (and a stray log entry) before this fires.
+    [[ $rc -eq 0 && $id == "$(cat "$sf")" ]] || {
+      printf '%s\n' "$out"
+      die_stale
+    }
+  else
+    [[ $rc -eq 0 && -n $id ]] || {
+      printf '%s\n' "$out"
+      echo "agent-send: agy run failed or returned no conversation id" >&2
+      exit $((rc ? rc : 1))
+    }
+    printf '%s\n' "$id" >"$sf"
+  fi
+  # status SUCCESS is not enough: when a tool is soft-denied agy ends the turn
+  # with SUCCESS, an empty response and the reason in denied_actions/stderr
+  text=$(jq -r 'select(.status == "SUCCESS") | .response // empty' <<<"$res")
+  [[ -n $text ]] || {
+    printf '%s\n' "$out" >&2
+    echo "agent-send: agy returned no report — $(jq -r '[.status, .error // empty, (.denied_actions // [] | map("denied " + .display_name) | .[])] | join(", ")' <<<"$res")" >&2
+    exit 1
+  }
+  printf '%s\n' "$text"
   ;;
 esac

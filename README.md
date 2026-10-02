@@ -1,14 +1,15 @@
 # agent-team
 
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.6.0-blue.svg?style=flat-square)
-![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi-8A2BE2?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.8.0-blue.svg?style=flat-square)
+![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi%20%C2%B7%20agy-8A2BE2?style=flat-square)
 ![Harness](https://img.shields.io/badge/harness-Claude%20Code%20%C2%B7%20Codex-2ea44f?style=flat-square)
 
 **Turn one coding agent into a tech lead with a team.** agent-team lets your
 orchestrator — Claude Code or Codex — delegate work to external coding-agent
 CLIs — [codex](https://github.com/openai/codex),
-[opencode](https://opencode.ai), [pi](https://github.com/earendil-works/pi), or
+[opencode](https://opencode.ai), [pi](https://github.com/earendil-works/pi),
+[agy](https://antigravity.google/docs/cli/using/) (Antigravity CLI), or
 another `claude` — through
 **session-persistent, role-based conversations**. The orchestrator writes the
 spec, farms out execution, sends review feedback to the *same* conversation,
@@ -72,7 +73,7 @@ are free-form names you define once, per user.
 |---|---|
 | `skills/agent-team/` | The skill: `SKILL.md` routes to `workflows/setup.md` (config interview) or `workflows/delegate.md` (cycle, quick reference, common mistakes) |
 | `<repo>/.agent-team/<session>.md` | Per-session work log: the spec sent, the agent's notes, appended per message; read it back with `agent-send --log <session>` |
-| `bin/agent-send` | ~160-line bash wrapper; Claude Code puts it on the Bash tool's PATH automatically, elsewhere `install.sh` links it |
+| `bin/agent-send` | ~400-line bash wrapper; Claude Code puts it on the Bash tool's PATH automatically, elsewhere `install.sh` links it |
 | `install.sh` | Links `agent-send` onto PATH (and the skill into `~/.codex/skills` for a plain git clone) — needed by every harness except Claude Code |
 | `.claude-plugin/marketplace.json` | This repo doubles as its own plugin marketplace; Codex reads the same manifest |
 
@@ -97,7 +98,7 @@ it — the CLIs themselves keep the real conversation history.
 - An orchestrator with a shell tool: [Claude Code](https://code.claude.com) v2.x+
   or [Codex](https://github.com/openai/codex) v0.154+
 - At least one backend installed and authenticated:
-  `codex` · `opencode` · `claude` · `pi`
+  `codex` · `opencode` · `claude` · `pi` · `agy`
 - `jq`
 
 ## Installation
@@ -148,7 +149,7 @@ sandbox_mode = "workspace-write"
 [sandbox_workspace_write]
 network_access = true
 # only the backends you delegate to
-writable_roots = ["~/.codex", "~/.claude", "~/.local/share/opencode", "~/.pi"]
+writable_roots = ["~/.codex", "~/.claude", "~/.local/share/opencode", "~/.pi", "~/.gemini"]
 ```
 
 and run `codex --profile agent-team`. Claude Code needs no equivalent.
@@ -160,7 +161,7 @@ Ask your orchestrator:
 > set up my agent team
 
 It detects installed CLIs, queries the models each backend can use
-**right now** (`agent-send --models` — codex, opencode and pi expose live
+**right now** (`agent-send --models` — codex, opencode, pi and agy expose live
 catalogs, so new releases show up without a plugin update), interviews you —
 which roles you want, which backend and model per role — writes
 `~/.config/agent-team/config.json`, and smoke-tests each role.
@@ -180,12 +181,15 @@ Example:
 Role names are free-form. `model` is optional (backend default when omitted).
 For pi, the model string also carries the reasoning level as a suffix —
 `"zai/glm-5.3-flash:high"` (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`,
-`max`).
+`max`). agy bakes it into the model id instead — `gemini-3.8-flash-high`,
+straight from `agent-send --models agy`.
 Every role can write, because every role journals its work to
 `.agent-team/<session>.md` — codex runs with sandbox `workspace-write`,
 opencode `--auto`, claude `--permission-mode acceptEdits`, pi with its
-`edit`/`write` tools. Scope a role by the worktree you send it to, not by
-taking its tools away.
+`edit`/`write` tools, agy with `--sandbox --dangerously-skip-permissions`
+(headless agy denies any tool not allow-listed, and one denied command ends
+the turn with no report; the sandbox confines its terminal instead). Scope a
+role by the worktree you send it to, not by taking its tools away.
 
 ## Usage
 
@@ -228,7 +232,7 @@ agent-send -m gpt-5.5 codex quickfix "..."
 - **Delegate execution, never judgment** — the spec and the merge decision stay with the orchestrator
 - **Conversations over prompts** — feedback goes to the agent that did the work
 - **Fail loud** — an expired session is an error, not a fresh start
-- **No infrastructure** — three CLIs, one bash script, files on disk
+- **No infrastructure** — a few CLIs, one bash script, files on disk
 
 ## Uninstall
 

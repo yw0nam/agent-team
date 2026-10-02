@@ -1,7 +1,7 @@
 ---
 name: agent-team
-description: Use when work should be delegated to external coding-agent CLIs (codex, opencode, claude, pi), when the user asks to set up or reconfigure their agent team, or when a follow-up message must reach the same external-agent conversation with its context intact.
-compatibility: Runs under any harness with a shell tool (Claude Code, Codex, ...). Requires at least one of the codex/opencode/claude/pi CLIs installed and authenticated, plus jq
+description: Use when work should be delegated to external coding-agent CLIs (codex, opencode, claude, pi, agy), when the user asks to set up or reconfigure their agent team, or when a follow-up message must reach the same external-agent conversation with its context intact.
+compatibility: Runs under any harness with a shell tool (Claude Code, Codex, ...). Requires at least one of the codex/opencode/claude/pi/agy CLIs installed and authenticated, plus jq
 ---
 
 # agent-team

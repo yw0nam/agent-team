@@ -6,7 +6,7 @@ to set up or change their roles.
 0. Make sure `agent-send` runs: `command -v agent-send`. If it is missing, run
    `install.sh` at the plugin root (Claude Code links it for you; no other
    harness does).
-1. Detect installed CLIs: `for c in codex opencode claude pi; do command -v $c; done`
+1. Detect installed CLIs: `for c in codex opencode claude pi agy; do command -v $c; done`
 2. Query the models each installed backend can use right now:
    `agent-send --models`. Model catalogs change too often to trust memory —
    only offer names from this live list.
@@ -31,7 +31,8 @@ to set up or change their roles.
 ```
 
    For pi, a reasoning level can be appended to the model —
-   `"zai/glm-5.3-flash:high"` (off/minimal/low/medium/high/xhigh/max).
+   `"zai/glm-5.3-flash:high"` (off/minimal/low/medium/high/xhigh/max). agy
+   bakes it into the model id instead (`gemini-3.8-flash-high`).
    Every role can write — the reporting protocol has each one journal to
    `.agent-team/<session>.md`, which a read-only role could not do. Scope a
    role by the worktree you send it to, not by taking its tools away.
@@ -50,7 +51,7 @@ a delegated agent needs:
 |---|---|---|
 | write `/tmp/agent-team/...` | allowed | agent-send's own session state survives |
 | network | **blocked** | the delegated CLI never reaches its provider |
-| write `~/.codex`, `~/.claude`, `~/.local/share/opencode`, `~/.pi` | **blocked** | the delegated CLI cannot persist its own session — resume breaks |
+| write `~/.codex`, `~/.claude`, `~/.local/share/opencode`, `~/.pi`, `~/.gemini` | **blocked** | the delegated CLI cannot persist its own session — resume breaks |
 
 Interactively, Codex will offer to re-run the failed command outside the
 sandbox, so a run survives on approval — but every `agent-send` call asks
@@ -65,7 +66,7 @@ sandbox_mode = "workspace-write"
 [sandbox_workspace_write]
 network_access = true
 # only the backends you actually delegate to; ~ is expanded
-writable_roots = ["~/.codex", "~/.claude", "~/.local/share/opencode", "~/.pi"]
+writable_roots = ["~/.codex", "~/.claude", "~/.local/share/opencode", "~/.pi", "~/.gemini"]
 ```
 
 Then run `codex --profile agent-team`. Full access
