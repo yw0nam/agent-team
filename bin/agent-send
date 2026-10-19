@@ -246,6 +246,10 @@ opencode)
   flags+=(--auto)
   [[ -n $model ]] && flags+=(-m "$model")
   if [[ -f $sf ]]; then
+    # opencode v2 creates a session for an unknown --session id and exits 0 —
+    # the silent context loss agent-send exists to prevent. export fails fast
+    # on a missing id, so check before the turn instead of after it.
+    opencode session export "$(cat "$sf")" >/dev/null || die_stale
     out=$(opencode run "${flags[@]}" --session "$(cat "$sf")" "$msg" 2>&1) || {
       printf '%s\n' "$out"
       die_stale

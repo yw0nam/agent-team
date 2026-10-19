@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.1 — 2026-10-19
+
+- `agent-send`: opencode v2 creates a new session for an unknown `--session`
+  id and exits 0, so a lost session resumed with no context and no error.
+  agent-send now checks the id with `opencode session export` before the turn
+  and fails loudly when it is gone. The check costs 0.4 s on a 323-message
+  session. Verified against opencode v2.0.32; flags, the JSON event stream and
+  `opencode models` are unchanged from v1.
+
 ## 1.8.0 — 2026-10-02
 
 - `agent-send`: new `agy` backend (Antigravity CLI). Sessions resume by
