@@ -250,7 +250,11 @@ opencode)
     # the silent context loss agent-send exists to prevent. export fails fast
     # on a missing id, so check before the turn instead of after it.
     opencode session export "$(cat "$sf")" >/dev/null || die_stale
-    out=$(opencode run "${flags[@]}" --session "$(cat "$sf")" "$msg" 2>&1) || {
+    # </dev/null: opencode run reads stdin to EOF when it is not a TTY, and a
+    # backgrounded caller's open pipe never sends one — the turn hangs before
+    # the prompt reaches the server. The new-session branch below gets this
+    # for free from `&` (bash gives background jobs /dev/null as stdin).
+    out=$(opencode run "${flags[@]}" --session "$(cat "$sf")" "$msg" </dev/null 2>&1) || {
       printf '%s\n' "$out"
       die_stale
     }
@@ -263,7 +267,7 @@ opencode)
     # running/burns tokens, but agent-send never learns its id and the next
     # call starts a brand-new session instead of resuming.
     tmp_out=$(mktemp)
-    opencode run "${flags[@]}" "$msg" >"$tmp_out" 2>&1 &
+    opencode run "${flags[@]}" "$msg" </dev/null >"$tmp_out" 2>&1 &
     pid=$!
     id=""
     while kill -0 "$pid" 2>/dev/null; do

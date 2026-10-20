@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.2 — 2026-10-20
+
+- `agent-send`: redirect opencode stdin from `/dev/null` on resume. `opencode
+  run` reads stdin to EOF when it is not a TTY, so a resumed turn started
+  from a caller with an open stdin pipe hung before the prompt reached the
+  server (0 % CPU, no message added to the session). New sessions were never
+  affected because `&` already gives them `/dev/null`. Same fix the codex
+  branch carries since 1.1.3.
+
 ## 1.8.1 — 2026-10-19
 
 - `agent-send`: opencode v2 creates a new session for an unknown `--session`
