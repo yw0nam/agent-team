@@ -1,7 +1,7 @@
 # agent-team
 
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.8.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.8.3-blue.svg?style=flat-square)
 ![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi%20%C2%B7%20agy-8A2BE2?style=flat-square)
 ![Harness](https://img.shields.io/badge/harness-Claude%20Code%20%C2%B7%20Codex-2ea44f?style=flat-square)
 
@@ -184,8 +184,10 @@ For pi, the model string also carries the reasoning level as a suffix —
 `max`). agy picks it by model id instead (no `--effort`) — `gemini-3.8-flash-high`,
 straight from `agent-send --models agy`.
 Every role can write, because every role journals its work to
-`.agent-team/<session>.md` — codex runs with sandbox `workspace-write`,
-opencode `--auto`, claude `--permission-mode acceptEdits`, pi with its
+`.agent-team/<session>.md` — codex runs with sandbox `workspace-write`
+plus the repository's git dirs as writable roots (the common `.git` and, in
+a linked worktree, its own `.git/worktrees/<name>`), so it can commit from a
+worktree; opencode `--auto`, claude `--permission-mode acceptEdits`, pi with its
 `edit`/`write` tools, agy with `--sandbox --dangerously-skip-permissions`
 (headless agy denies any tool not allow-listed, and one denied command ends
 the turn with no report; the sandbox confines its terminal instead). Scope a
