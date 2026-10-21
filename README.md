@@ -1,5 +1,6 @@
 # agent-team
 
+![CI](https://img.shields.io/github/actions/workflow/status/yw0nam/agent-team/ci.yml?branch=main&style=flat-square&label=ci)
 ![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
 ![Version](https://img.shields.io/badge/version-1.8.3-blue.svg?style=flat-square)
 ![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi%20%C2%B7%20agy-8A2BE2?style=flat-square)
@@ -17,6 +18,8 @@ and keeps the final quality gate.
 
 Think of it as `SendMessage` for external CLIs: every delegated conversation
 gets a durable name, and every follow-up resumes it with full context intact.
+
+![agent-send: a second message to the same session recalls the codeword from the first](docs/demo.gif)
 
 ```
 You ──► Claude Code / Codex  (orchestrator: spec, judgment, quality gate)
@@ -75,6 +78,8 @@ are free-form names you define once, per user.
 | `<repo>/.agent-team/<session>.md` | Per-session work log: the spec sent, the agent's notes, appended per message; read it back with `agent-send --log <session>` |
 | `bin/agent-send` | ~400-line bash wrapper; Claude Code puts it on the Bash tool's PATH automatically, elsewhere `install.sh` links it |
 | `install.sh` | Links `agent-send` onto PATH (and the skill into `~/.codex/skills` for a plain git clone) — needed by every harness except Claude Code |
+| `tests/agent-send.test.sh` | Runs `agent-send` against stub `claude` and `codex` CLIs: session create, resume by name, loud failure on an expired session, roles. CI runs it with shellcheck |
+| `docs/demo.tape` | Renders `docs/demo.gif` with [VHS](https://github.com/charmbracelet/vhs) against your `impl` role |
 | `.claude-plugin/marketplace.json` | This repo doubles as its own plugin marketplace; Codex reads the same manifest |
 
 Write roles report like a colleague, not a transcript: every message tells
