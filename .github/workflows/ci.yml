@@ -1,0 +1,15 @@
+# lint and stub-test agent-send on every push and pull request
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # jq and shellcheck ship with the runner image
+      - run: shellcheck bin/agent-send install.sh tests/agent-send.test.sh
+      - run: bash tests/agent-send.test.sh
