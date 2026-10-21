@@ -19,7 +19,7 @@ and keeps the final quality gate.
 Think of it as `SendMessage` for external CLIs: every delegated conversation
 gets a durable name, and every follow-up resumes it with full context intact.
 
-![agent-send: a second message to the same session recalls the codeword from the first](docs/demo.gif)
+![Claude Code sends fizzbuzz.py to impl (pi) and its tests to impl2 (opencode), both in the background, then runs the tests once both finish](docs/demo.gif)
 
 ```
 You ──► Claude Code / Codex  (orchestrator: spec, judgment, quality gate)
@@ -79,7 +79,7 @@ are free-form names you define once, per user.
 | `bin/agent-send` | ~400-line bash wrapper; Claude Code puts it on the Bash tool's PATH automatically, elsewhere `install.sh` links it |
 | `install.sh` | Links `agent-send` onto PATH (and the skill into `~/.codex/skills` for a plain git clone) — needed by every harness except Claude Code |
 | `tests/agent-send.test.sh` | Runs `agent-send` against stub `claude` and `codex` CLIs: session create, resume by name, loud failure on an expired session, roles. CI runs it with shellcheck |
-| `docs/demo.tape` | Renders `docs/demo.gif` with [VHS](https://github.com/charmbracelet/vhs) against your `impl` role |
+| `docs/demo.tape` | Renders `docs/demo.gif` with [VHS](https://github.com/charmbracelet/vhs) inside Claude Code, against your `impl` and `impl2` roles |
 | `.claude-plugin/marketplace.json` | This repo doubles as its own plugin marketplace; Codex reads the same manifest |
 
 Write roles report like a colleague, not a transcript: every message tells
