@@ -2,30 +2,29 @@
 Output docs/demo.gif
 Set Shell bash
 Set FontSize 15
-Set Width 1100
-Set Height 420
+Set Width 1200
+Set Height 240
 Set Theme "Catppuccin Mocha"
-Set TypingSpeed 35ms
+Set TypingSpeed 20ms
 
 Hide
 Type `export PS1='$ ' && cd "$(mktemp -d)" && clear`
 Enter
 Show
 
-Type "agent-send --roles"
+Type "agent-send impl demo 'Remember the codeword: pineapple. Reply with the Summary only, one sentence.'"
 Enter
-Sleep 1.5s
-
-Type "agent-send impl demo 'Remember the codeword: pineapple. Reply with the Summary section only.'"
-Enter
+Sleep 0.5s
+# the model's turn is cut from the recording
+Hide
 Wait@300s /^\$$/
+Show
 Sleep 2s
 
-Type "agent-send impl demo 'What codeword did I give you? Summary section only.'"
+Type "agent-send impl demo 'What was the codeword? Reply with the Summary only, one sentence, from memory.'"
 Enter
+Sleep 0.5s
+Hide
 Wait@300s /^\$$/
-Sleep 2s
-
-Type "agent-send --list"
-Enter
-Sleep 3s
+Show
+Sleep 4s
