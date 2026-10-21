@@ -25,7 +25,14 @@ Sleep 1.5s
 Hide
 Wait+Screen@300s /Running in the background[\s\S]*Running in the background/
 Show
-Sleep 3s
+Sleep 2s
+# open the background-task list while both roles run
+Down
+Sleep 1s
+Enter
+Sleep 4s
+Escape
+Sleep 1s
 Hide
 # vhs reads the top of the buffer, not the scrolled view, so the rest is timed:
 # both roles and the test run take about 2 minutes
