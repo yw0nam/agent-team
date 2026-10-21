@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.3 — 2026-10-21
+
+- `agent-send`: codex in a linked worktree can commit. Making the common git
+  dir a writable root was not enough: codex keeps the dir a worktree's `.git`
+  file points to (`.git/worktrees/<name>`, where `index.lock` lives)
+  read-only unless that exact path is itself a writable root, so every
+  `git add` failed with "Unable to create … index.lock: Operation not
+  permitted". agent-send now adds `git rev-parse --absolute-git-dir` too.
+  Measured on codex-cli 0.159.1: the commit failed with the common dir alone
+  and passed with both.
+
 ## 1.8.2 — 2026-10-20
 
 - `agent-send`: redirect opencode stdin from `/dev/null` on resume. `opencode
