@@ -1,30 +1,34 @@
-# Renders docs/demo.gif: `vhs docs/demo.tape` (needs a configured `impl` role)
+# Renders docs/demo.gif from the repo root: `vhs docs/demo.tape`.
+# Needs `impl` and `impl2` roles, and /tmp/fizzbuzz trusted in Claude Code once.
 Output docs/demo.gif
 Set Shell bash
 Set FontSize 15
 Set Width 1200
-Set Height 240
+Set Height 700
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 20ms
 
 Hide
-Type `export PS1='$ ' && cd "$(mktemp -d)" && clear`
+# a fresh project, a fresh pi session, and no env leaking from a parent Claude Code
+Type `export PS1='$ ' R=$PWD && unset CLAUDECODE CLAUDE_PID CLAUDE_EFFORT ${!CLAUDE_CODE_*} && rm -rf /tmp/fizzbuzz ~/.pi/agent/sessions/--private-tmp-fizzbuzz-- && mkdir -p /tmp/fizzbuzz/.claude && cd /tmp/fizzbuzz && git init -q && echo '{"permissions":{"allow":["Bash","Read","Edit","Write","Skill"]}}' > .claude/settings.json && clear`
 Enter
+Type `clear; claude --setting-sources project --strict-mcp-config --plugin-dir "$R"`
+Enter
+Sleep 8s
 Show
 
-Type "agent-send impl demo 'Remember the codeword: pineapple. Reply with the Summary only, one sentence.'"
-Enter
+Type "With agent-team, in parallel in the background: impl writes fizzbuzz.py, impl2 writes pytest tests for it in test_fizzbuzz.py. When both finish, run the tests."
 Sleep 0.5s
-# the model's turn is cut from the recording
-Hide
-Wait@300s /^\$$/
-Show
-Sleep 2s
-
-Type "agent-send impl demo 'What was the codeword? Reply with the Summary only, one sentence, from memory.'"
 Enter
-Sleep 0.5s
+Sleep 1.5s
+# Claude reads the skill and dispatches both roles
 Hide
-Wait@300s /^\$$/
+Wait+Screen@300s /Running in the background[\s\S]*Running in the background/
 Show
-Sleep 4s
+Sleep 3s
+Hide
+# vhs reads the top of the buffer, not the scrolled view, so the rest is timed:
+# both roles and the test run take about 2 minutes
+Sleep 240s
+Show
+Sleep 6s
