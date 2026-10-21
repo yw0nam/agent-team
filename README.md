@@ -184,8 +184,10 @@ For pi, the model string also carries the reasoning level as a suffix —
 `max`). agy picks it by model id instead (no `--effort`) — `gemini-3.8-flash-high`,
 straight from `agent-send --models agy`.
 Every role can write, because every role journals its work to
-`.agent-team/<session>.md` — codex runs with sandbox `workspace-write`,
-opencode `--auto`, claude `--permission-mode acceptEdits`, pi with its
+`.agent-team/<session>.md` — codex runs with sandbox `workspace-write`
+plus the repository's git dirs as writable roots (the common `.git` and, in
+a linked worktree, its own `.git/worktrees/<name>`), so it can commit from a
+worktree; opencode `--auto`, claude `--permission-mode acceptEdits`, pi with its
 `edit`/`write` tools, agy with `--sandbox --dangerously-skip-permissions`
 (headless agy denies any tool not allow-listed, and one denied command ends
 the turn with no report; the sandbox confines its terminal instead). Scope a
