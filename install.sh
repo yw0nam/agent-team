@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install agent-team for harnesses that don't do it themselves.
+# Install any-subagent for harnesses that don't do it themselves.
 #
 # Claude Code needs none of this: `/plugin install` puts bin/ on the Bash PATH
 # and loads skills/ for you. Codex (and opencode, pi, a bare shell) discovers
@@ -7,7 +7,7 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
-bindir=${AGENT_TEAM_BIN:-$HOME/.local/bin}
+bindir=${ANY_SUBAGENT_BIN:-$HOME/.local/bin}
 
 mkdir -p "$bindir"
 ln -sfn "$root/bin/agent-send" "$bindir/agent-send"
@@ -17,12 +17,12 @@ echo "linked $bindir/agent-send -> $root/bin/agent-send"
 # lives in the plugin cache, and linking on top of that lists the skill twice.
 codex_home=${CODEX_HOME:-$HOME/.codex}
 shopt -s nullglob
-from_plugin=("$codex_home"/plugins/cache/*/agent-team)
+from_plugin=("$codex_home"/plugins/cache/*/any-subagent)
 shopt -u nullglob
 if command -v codex >/dev/null && [[ ${#from_plugin[@]} -eq 0 ]]; then
   mkdir -p "$codex_home/skills"
-  ln -sfn "$root/skills/agent-team" "$codex_home/skills/agent-team"
-  echo "linked $codex_home/skills/agent-team -> $root/skills/agent-team"
+  ln -sfn "$root/skills/any-subagent" "$codex_home/skills/any-subagent"
+  echo "linked $codex_home/skills/any-subagent -> $root/skills/any-subagent"
 elif [[ ${#from_plugin[@]} -gt 0 ]]; then
   echo "skill: already installed as a codex plugin (${from_plugin[0]}) — not linking again"
 fi

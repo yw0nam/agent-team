@@ -1,20 +1,19 @@
-# agent-team
+# any-subagent
 
-![CI](https://img.shields.io/github/actions/workflow/status/yw0nam/agent-team/ci.yml?branch=main&style=flat-square&label=ci)
-![License](https://img.shields.io/github/license/yw0nam/agent-team.svg?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.8.3-blue.svg?style=flat-square)
+![CI](https://img.shields.io/github/actions/workflow/status/yw0nam/any-subagent/ci.yml?branch=main&style=flat-square&label=ci)
+![License](https://img.shields.io/github/license/yw0nam/any-subagent.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg?style=flat-square)
 ![Backends](https://img.shields.io/badge/backends-codex%20%C2%B7%20opencode%20%C2%B7%20claude%20%C2%B7%20pi%20%C2%B7%20agy-8A2BE2?style=flat-square)
 ![Harness](https://img.shields.io/badge/harness-Claude%20Code%20%C2%B7%20Codex-2ea44f?style=flat-square)
 
-**Turn one coding agent into a tech lead with a team.** agent-team lets your
-orchestrator — Claude Code or Codex — delegate work to external coding-agent
-CLIs — [codex](https://github.com/openai/codex),
+**Run other coding-agent CLIs as background subagents.** any-subagent lets
+your orchestrator — Claude Code or Codex — delegate work to
+[codex](https://github.com/openai/codex),
 [opencode](https://opencode.ai), [pi](https://github.com/earendil-works/pi),
 [agy](https://antigravity.google/docs/cli/using/) (Antigravity CLI), or
-another `claude` — through
-**session-persistent, role-based conversations**. The orchestrator writes the
-spec, farms out execution, sends review feedback to the *same* conversation,
-and keeps the final quality gate.
+another `claude` through **session-persistent, role-based conversations**. The
+orchestrator writes the spec, farms out execution, sends review feedback to
+the *same* conversation, and keeps the final quality gate.
 
 Think of it as `SendMessage` for external CLIs: every delegated conversation
 gets a durable name, and every follow-up resumes it with full context intact.
@@ -36,7 +35,7 @@ You ──► Claude Code / Codex  (orchestrator: spec, judgment, quality gate)
 
 Multi-agent setups usually break down in one of three ways: the delegated
 agent forgets everything between messages, parallel tasks race each other, or
-the orchestrator quietly outsources its judgment. agent-team is built around
+the orchestrator quietly outsources its judgment. any-subagent is built around
 fixes for all three:
 
 - **Conversations, not fire-and-forget prompts.** Session ids are persisted on
@@ -74,8 +73,8 @@ are free-form names you define once, per user.
 
 | Component | What it does |
 |---|---|
-| `skills/agent-team/` | The skill: `SKILL.md` routes to `workflows/setup.md` (config interview) or `workflows/delegate.md` (cycle, quick reference, common mistakes) |
-| `<repo>/.agent-team/<session>.md` | Per-session work log: the spec sent, the agent's notes, appended per message; read it back with `agent-send --log <session>` |
+| `skills/any-subagent/` | The skill: `SKILL.md` routes to `workflows/setup.md` (config interview) or `workflows/delegate.md` (cycle, quick reference, common mistakes) |
+| `<repo>/.any-subagent/<session>.md` | Per-session work log: the spec sent, the agent's notes, appended per message; read it back with `agent-send --log <session>` |
 | `bin/agent-send` | ~400-line bash wrapper; Claude Code puts it on the Bash tool's PATH automatically, elsewhere `install.sh` links it |
 | `install.sh` | Links `agent-send` onto PATH (and the skill into `~/.codex/skills` for a plain git clone) — needed by every harness except Claude Code |
 | `tests/agent-send.test.sh` | Runs `agent-send` against stub `claude` and `codex` CLIs: session create, resume by name, loud failure on an expired session, roles. CI runs it with shellcheck |
@@ -84,7 +83,7 @@ are free-form names you define once, per user.
 
 Write roles report like a colleague, not a transcript: every message tells
 them to append the spec they were given plus their own notes to
-`<repo-root>/.agent-team/<session>.md`, and to reply with a structured report (summary, changes, verification, notes,
+`<repo-root>/.any-subagent/<session>.md`, and to reply with a structured report (summary, changes, verification, notes,
 log path) instead of a transcript. The orchestrator's context stays clean and the
 detail is one `agent-send --log <session>` away. The directory ignores itself,
 so the logs never appear in `git status`.
@@ -111,11 +110,11 @@ it — the CLIs themselves keep the real conversation history.
 ### Claude Code
 
 ```
-/plugin marketplace add yw0nam/agent-team
-/plugin install agent-team@yw0nam
+/plugin marketplace add yw0nam/any-subagent
+/plugin install any-subagent@yw0nam
 ```
 
-Or from the shell: `claude plugin marketplace add yw0nam/agent-team && claude plugin install agent-team@yw0nam`.
+Or from the shell: `claude plugin marketplace add yw0nam/any-subagent && claude plugin install any-subagent@yw0nam`.
 Nothing else to do — the plugin's `bin/` lands on the Bash tool's PATH.
 
 ### Codex
@@ -123,19 +122,19 @@ Nothing else to do — the plugin's `bin/` lands on the Bash tool's PATH.
 Codex reads the same marketplace manifest:
 
 ```bash
-codex plugin marketplace add yw0nam/agent-team
-codex plugin add agent-team@yw0nam
-~/.codex/plugins/cache/yw0nam/agent-team/*/install.sh   # puts agent-send on PATH
+codex plugin marketplace add yw0nam/any-subagent
+codex plugin add any-subagent@yw0nam
+~/.codex/plugins/cache/yw0nam/any-subagent/*/install.sh   # puts agent-send on PATH
 ```
 
 The last step is the one Codex doesn't do for you: plugins contribute skills,
 not PATH entries, so `agent-send` has to be linked once (into `~/.local/bin`,
-or `AGENT_TEAM_BIN=<dir>` elsewhere). Re-run it after upgrading the plugin.
+or `ANY_SUBAGENT_BIN=<dir>` elsewhere). Re-run it after upgrading the plugin.
 
 ### Any harness, from a clone
 
 ```bash
-git clone https://github.com/yw0nam/agent-team && ./agent-team/install.sh
+git clone https://github.com/yw0nam/any-subagent && ./any-subagent/install.sh
 ```
 
 Links `agent-send` onto PATH, plus the skill into `~/.codex/skills/` when Codex
@@ -146,7 +145,7 @@ is installed and the plugin isn't.
 A delegated CLI inherits the sandbox of the session that spawned it, and
 Codex's default `workspace-write` denies both the network and writes to the
 backend's own state dir — so delegation fails or loses its sessions. Write
-`~/.codex/agent-team.config.toml`:
+`~/.codex/any-subagent.config.toml`:
 
 ```toml
 sandbox_mode = "workspace-write"
@@ -157,19 +156,19 @@ network_access = true
 writable_roots = ["~/.codex", "~/.claude", "~/.local/share/opencode", "~/.pi", "~/.gemini"]
 ```
 
-and run `codex --profile agent-team`. Claude Code needs no equivalent.
+and run `codex --profile any-subagent`. Claude Code needs no equivalent.
 
 ## Setup
 
 Ask your orchestrator:
 
-> set up my agent team
+> set up any-subagent roles
 
 It detects installed CLIs, queries the models each backend can use
 **right now** (`agent-send --models` — codex, opencode, pi and agy expose live
 catalogs, so new releases show up without a plugin update), interviews you —
 which roles you want, which backend and model per role — writes
-`~/.config/agent-team/config.json`, and smoke-tests each role.
+`~/.config/any-subagent/config.json`, and smoke-tests each role.
 Example:
 
 ```json
@@ -189,7 +188,7 @@ For pi, the model string also carries the reasoning level as a suffix —
 `max`). agy picks it by model id instead (no `--effort`) — `gemini-3.8-flash-high`,
 straight from `agent-send --models agy`.
 Every role can write, because every role journals its work to
-`.agent-team/<session>.md` — codex runs with sandbox `workspace-write`
+`.any-subagent/<session>.md` — codex runs with sandbox `workspace-write`
 plus the repository's git dirs as writable roots (the common `.git` and, in
 a linked worktree, its own `.git/worktrees/<name>`), so it can commit from a
 worktree; opencode `--auto`, claude `--permission-mode acceptEdits`, pi with its
@@ -221,7 +220,7 @@ agent-send -m gpt-5.5 codex quickfix "..."
 
 ## Design notes
 
-- **Session state** lives in `/tmp/agent-team/<cwd-hash>/` — one plain-text
+- **Session state** lives in `/tmp/any-subagent/<cwd-hash>/` — one plain-text
   file per conversation holding the backend's session id. Delete a file to
   start that conversation over; delete the directory to reset everything.
 - **Worktree-safe by construction.** State is keyed on the working directory,
@@ -244,12 +243,12 @@ agent-send -m gpt-5.5 codex quickfix "..."
 ## Uninstall
 
 ```
-/plugin uninstall agent-team@yw0nam      # Claude Code
-codex plugin remove agent-team@yw0nam    # Codex
+/plugin uninstall any-subagent@yw0nam      # Claude Code
+codex plugin remove any-subagent@yw0nam    # Codex
 ```
 
 Then `rm ~/.local/bin/agent-send` if `install.sh` linked it. Config
-(`~/.config/agent-team/`) and session state (`/tmp/agent-team/`) are plain
+(`~/.config/any-subagent/`) and session state (`/tmp/any-subagent/`) are plain
 files — delete them anytime.
 
 ## License

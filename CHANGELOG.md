@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.0 — 2026-10-22
+
+- Renamed from agent-team to any-subagent: the repo, the plugin, the skill,
+  the config path (`~/.config/any-subagent/config.json`), the env vars
+  (`ANY_SUBAGENT_CONFIG`, `ANY_SUBAGENT_BIN`), the session state
+  (`/tmp/any-subagent/`), the per-repo log dir (`.any-subagent/`), the Codex
+  profile (`any-subagent`) and pi session ids (`any-subagent-<name>`). The
+  `agent-send` command keeps its name. No old path is read: move
+  `~/.config/agent-team/config.json` to the new path, then reinstall with
+  `/plugin install any-subagent@yw0nam`. Sessions started under the old name
+  do not resume.
+
 ## 1.8.3 — 2026-10-21
 
 - `agent-send`: codex in a linked worktree can commit. Making the common git

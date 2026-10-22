@@ -7,7 +7,7 @@
   },
   "plugins": [
     {
-      "name": "agent-team",
+      "name": "any-subagent",
       "source": "./",
       "description": "Delegate work to external coding-agent CLIs (codex, opencode, claude, pi, agy) through session-persistent, role-based conversations",
       "category": "development",
@@ -16,7 +16,7 @@
         "name": "yw0nam",
         "email": "spow2544@gmail.com"
       },
-      "homepage": "https://github.com/yw0nam/agent-team"
+      "homepage": "https://github.com/yw0nam/any-subagent"
     }
   ]
 }

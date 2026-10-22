@@ -1,6 +1,6 @@
-# Workflow: setup / reconfigure the agent team
+# Workflow: setup / reconfigure the roles
 
-Run this when `~/.config/agent-team/config.json` is missing, or the user asks
+Run this when `~/.config/any-subagent/config.json` is missing, or the user asks
 to set up or change their roles.
 
 0. Make sure `agent-send` runs: `command -v agent-send`. If it is missing, run
@@ -34,7 +34,7 @@ to set up or change their roles.
    `"zai/glm-5.3-flash:high"` (off/minimal/low/medium/high/xhigh/max). agy
    picks it by model id instead (no `--effort`): `gemini-3.8-flash-high`.
    Every role can write — the reporting protocol has each one journal to
-   `.agent-team/<session>.md`, which a read-only role could not do. Scope a
+   `.any-subagent/<session>.md`, which a read-only role could not do. Scope a
    role by the worktree you send it to, not by taking its tools away.
 
 5. Smoke-test each role with a trivial prompt — some models still fail only
@@ -49,7 +49,7 @@ a delegated agent needs:
 
 | Under default `workspace-write` | Result | Effect on delegation |
 |---|---|---|
-| write `/tmp/agent-team/...` | allowed | agent-send's own session state survives |
+| write `/tmp/any-subagent/...` | allowed | agent-send's own session state survives |
 | network | **blocked** | the delegated CLI never reaches its provider |
 | write `~/.codex`, `~/.claude`, `~/.local/share/opencode`, `~/.pi`, `~/.gemini` | **blocked** | the delegated CLI cannot persist its own session — resume breaks |
 
@@ -57,7 +57,7 @@ Interactively, Codex will offer to re-run the failed command outside the
 sandbox, so a run survives on approval — but every `agent-send` call asks
 again. Give the session network plus the state dirs of the backends you use
 instead. Codex 0.154+ keeps each profile in its own file — write
-`~/.codex/agent-team.config.toml` (a `[profiles.x]` table inside `config.toml`
+`~/.codex/any-subagent.config.toml` (a `[profiles.x]` table inside `config.toml`
 is the legacy form and is now rejected):
 
 ```toml
@@ -69,7 +69,7 @@ network_access = true
 writable_roots = ["~/.codex", "~/.claude", "~/.local/share/opencode", "~/.pi", "~/.gemini"]
 ```
 
-Then run `codex --profile agent-team`. Full access
+Then run `codex --profile any-subagent`. Full access
 (`--dangerously-bypass-approvals-and-sandbox`) also works and is what you get
 in a container, but it drops the sandbox for the orchestrator's own commands
 too; the profile keeps that protection.
