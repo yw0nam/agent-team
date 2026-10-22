@@ -11,8 +11,8 @@ T=$(mktemp -d)
 mkdir -p "$T/bin" "$T/work"
 # hash agent-send derives from its cwd, so EXIT cleanup removes its state dir too
 state_key=$(cd "$T/work" && pwd -P | sha1sum | cut -c1-12)
-trap 'rm -rf "$T" "/tmp/agent-team/$state_key"' EXIT
-STATE="/tmp/agent-team/$state_key"
+trap 'rm -rf "$T" "/tmp/any-subagent/$state_key"' EXIT
+STATE="/tmp/any-subagent/$state_key"
 
 fail() { # first failing check aborts the run
   echo "FAIL: $1" >&2
@@ -46,7 +46,7 @@ chmod +x "$T/bin/claude" "$T/bin/codex"
 printf '%s\n' '{"roles":{"impl":{"backend":"claude","model":"m1"}}}' >"$T/config.json"
 
 run() { # every call happens in $T/work, stubs first on PATH
-  (cd "$T/work" && PATH="$T/bin:$PATH" AGENT_TEAM_CONFIG="$T/config.json" "$AGENT_SEND" "$@")
+  (cd "$T/work" && PATH="$T/bin:$PATH" ANY_SUBAGENT_CONFIG="$T/config.json" "$AGENT_SEND" "$@")
 }
 
 # 1. first call creates the session

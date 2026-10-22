@@ -5,7 +5,7 @@
 # Sessions are keyed by (cwd, backend, name); state is one file holding the session id.
 set -uo pipefail
 
-CONFIG="${AGENT_TEAM_CONFIG:-$HOME/.config/agent-team/config.json}"
+CONFIG="${ANY_SUBAGENT_CONFIG:-$HOME/.config/any-subagent/config.json}"
 BACKENDS="codex opencode claude pi agy"
 
 usage() {
@@ -29,10 +29,10 @@ EOF
   exit 2
 }
 
-state_dir="/tmp/agent-team/$(pwd -P | sha1sum | cut -c1-12)"
+state_dir="/tmp/any-subagent/$(pwd -P | sha1sum | cut -c1-12)"
 # Work logs live in the tree the agent works on (worktrees isolate themselves),
 # not in state_dir: the point is that they are readable next to the diff.
-log_dir="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)/.agent-team"
+log_dir="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)/.any-subagent"
 
 case "${1:-}" in
 --note)
@@ -104,7 +104,7 @@ if [[ " $BACKENDS " == *" $target "* ]]; then
 else
   [[ -f $CONFIG ]] || {
     echo "agent-send: '$target' is not a backend ($BACKENDS) and no config exists at $CONFIG." >&2
-    echo "agent-send: define roles there (see the agent-team skill) or use a backend name." >&2
+    echo "agent-send: define roles there (see the any-subagent skill) or use a backend name." >&2
     exit 1
   }
   backend=$(jq -r --arg r "$target" '.roles[$r].backend // empty' "$CONFIG")
@@ -336,7 +336,7 @@ pi)
   # a timeout can never be orphaned. Session storage is per-project (cwd), which
   # already matches agent-send's (cwd, backend, name) key; the state file is
   # written only so --list shows the session.
-  id="agent-team-$name"
+  id="any-subagent-$name"
   flags=(-p --mode json --session-id "$id")
   [[ -n $model ]] && flags+=(--model "$model")
   out=$(pi "${flags[@]}" "$msg" </dev/null 2>&1)

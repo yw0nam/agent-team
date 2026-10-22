@@ -17,7 +17,7 @@ Enter
 Sleep 8s
 Show
 
-Type "With agent-team, in parallel in the background: impl writes fizzbuzz.py, impl2 writes pytest tests for it in test_fizzbuzz.py. When both finish, run the tests."
+Type "With any-subagent, in parallel in the background: impl writes fizzbuzz.py, impl2 writes pytest tests for it in test_fizzbuzz.py. When both finish, run the tests."
 Sleep 0.5s
 Enter
 Sleep 1.5s

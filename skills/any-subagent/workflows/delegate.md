@@ -23,13 +23,13 @@
 | Harness | Background a delegation |
 |---|---|
 | Claude Code | Bash tool with `run_in_background: true`; the harness wakes you on exit |
-| Codex, or any shell-only harness | `nohup agent-send ... > /tmp/agent-team/<name>.out 2>&1 &`, then poll the file (no wake-up; check between your own steps) |
+| Codex, or any shell-only harness | `nohup agent-send ... > /tmp/any-subagent/<name>.out 2>&1 &`, then poll the file (no wake-up; check between your own steps) |
 | Nothing to spare | Run it in the foreground with a generous timeout and wait |
 
 ## Work Logs
 
 Every role is told, on every message, to append to
-`<repo-root>/.agent-team/<session-name>.md` — the spec you sent copied
+`<repo-root>/.any-subagent/<session-name>.md` — the spec you sent copied
 verbatim, then their notes (what they did, decisions, rejected alternatives,
 commands, anything unfinished) — and to reply with a structured report —
 `## Summary` / `## Changes` / `## Verification` / `## Notes` / `## Log`, the
@@ -43,14 +43,14 @@ same shape a harness subagent hands back. So:
   before re-asking the agent, which costs a turn.
 - The log is append-only and per session, so a follow-up lands under a new
   heading in the same file and the whole thread stays readable.
-- `.agent-team/` ignores itself (a `.gitignore` holding `*`), so logs never
+- `.any-subagent/` ignores itself (a `.gitignore` holding `*`), so logs never
   show up in `git status`. `git add -f` if you want to keep one.
 
 ## Changing Your Mind Mid-Run
 
 The CLIs are one-shot in non-interactive mode: nothing can be injected into a
 turn already in flight. `agent-send --note <name> "..."` instead appends to
-`.agent-team/<name>.inbox.md`, which roles are told to re-read before
+`.any-subagent/<name>.inbox.md`, which roles are told to re-read before
 each major step — they apply it, log it under `### amendment`, and empty the
 file.
 

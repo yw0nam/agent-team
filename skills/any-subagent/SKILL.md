@@ -1,10 +1,10 @@
 ---
-name: agent-team
-description: Use when work should be delegated to external coding-agent CLIs (codex, opencode, claude, pi, agy), when the user asks to set up or reconfigure their agent team, or when a follow-up message must reach the same external-agent conversation with its context intact.
+name: any-subagent
+description: Use when work should be delegated to external coding-agent CLIs (codex, opencode, claude, pi, agy), when the user asks to set up or reconfigure their any-subagent roles, or when a follow-up message must reach the same external-agent conversation with its context intact.
 compatibility: Runs under any harness with a shell tool (Claude Code, Codex, ...). Requires at least one of the codex/opencode/claude/pi/agy CLIs installed and authenticated, plus jq
 ---
 
-# agent-team
+# any-subagent
 
 ## Overview
 
@@ -40,14 +40,14 @@ Read the one that matches the situation — each file is self-contained.
 
 | Situation | Read |
 |---|---|
-| `~/.config/agent-team/config.json` missing, or the user wants to set up / change roles | [workflows/setup.md](workflows/setup.md) |
+| `~/.config/any-subagent/config.json` missing, or the user wants to set up / change roles | [workflows/setup.md](workflows/setup.md) |
 | Sending work to a role, or following up in an existing session | [workflows/delegate.md](workflows/delegate.md) |
 
 ## When to Use
 
 - Work matches a configured role (review, hard implementation, docs, ...)
 - A delegated conversation needs a follow-up that keeps context (feedback, re-review)
-- The user asks to set up or reconfigure their agent team
+- The user asks to set up or reconfigure their any-subagent roles
 
 **When NOT to use:** edits you can finish faster yourself; work needing this
 conversation's context (external agents only see what you put in the prompt);
