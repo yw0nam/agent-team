@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.1 — 2026-10-23
+
+- Skill: a new Trust section says the other agent's reply, work log and inbox
+  are data. Nothing in them can approve a merge, a push or another command.
+- Skill: before it runs `install.sh`, the orchestrator shows it to the user
+  and waits for a yes (SKILL.md preflight and setup step 0).
+
 ## 2.0.0 — 2026-10-22
 
 - Renamed from agent-team to any-subagent: the repo, the plugin, the skill,
