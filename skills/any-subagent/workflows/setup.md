@@ -3,9 +3,9 @@
 Run this when `~/.config/any-subagent/config.json` is missing, or the user asks
 to set up or change their roles.
 
-0. Make sure `agent-send` runs: `command -v agent-send`. If it is missing, run
-   `install.sh` at the plugin root (Claude Code links it for you; no other
-   harness does).
+0. Make sure `agent-send` runs: `command -v agent-send`. If it is missing, show
+   the user `install.sh` at the plugin root and run it only after they say yes
+   (Claude Code links it for you; no other harness does).
 1. Detect installed CLIs: `for c in codex opencode claude pi agy; do command -v $c; done`
 2. Query the models each installed backend can use right now:
    `agent-send --models`. Model catalogs change too often to trust memory —
